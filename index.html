@@ -33,6 +33,13 @@
   .p-head .sub{margin-top:7px;font-size:12.5px;color:#5a5140;font-style:italic;line-height:1.4;}
   .p-head .author{margin-top:9px;font-size:12px;color:var(--ink);font-weight:600;}
 
+  .booksel{display:flex;align-items:center;gap:8px;padding:10px 16px 2px;}
+  .booksel-label{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:700;}
+  #bookSel{flex:1;padding:6px 8px;border:1.5px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;font-size:12.5px;}
+  .grp{display:flex;align-items:center;gap:8px;font-family:Georgia,serif;font-weight:700;color:var(--ink);font-size:13px;padding:12px 12px 3px;}
+  .grp-dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);flex:0 0 11px;}
+  .psrc{margin-top:8px;font-size:10.5px;color:#6b6250;font-style:italic;}
+  .leg-src{margin-top:8px;font-size:10px;color:#6b6250;font-style:italic;}
   .list{overflow-y:auto;flex:1;padding:8px 12px 16px;}
   .list::-webkit-scrollbar{width:9px;}
   .list::-webkit-scrollbar-thumb{background:var(--brass);border-radius:6px;}
@@ -61,7 +68,7 @@
 
   .leaflet-popup-content-wrapper{background:var(--parch);border-radius:8px;border:2px solid var(--ink);box-shadow:0 8px 30px rgba(0,0,0,.5);}
   .leaflet-popup-tip{background:var(--parch);border:2px solid var(--ink);}
-  .leaflet-popup-content{margin:14px 16px;width:280px!important;}
+  .leaflet-popup-content{margin:14px 16px;width:280px!important;max-height:58dvh;overflow-y:auto;}
   .pop-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);font-weight:700;}
   .pop h3{font-family:Georgia,serif;font-size:19px;color:var(--ink);margin:3px 0 8px;line-height:1.1;}
   .pop p{font-size:12.5px;color:#3f3a30;line-height:1.5;}
@@ -126,7 +133,7 @@
   .tr-out{margin-top:8px;font-size:12px;color:var(--text);line-height:1.4;}
   .tr-out ul{margin:2px 0 0 16px;padding:0;}
   .tr-out b{color:var(--ink);}
-  .pex{margin-top:6px;font-size:11.5px;line-height:1.45;max-height:130px;overflow-y:auto;padding-right:4px;}
+  .pex{margin-top:6px;font-size:11.5px;line-height:1.45;padding-right:4px;}
   .pmore{display:inline-block;margin-top:7px;font-size:11.5px;color:#2f7d8f;font-weight:700;text-decoration:none;}
   .pmore:hover{text-decoration:underline;}
   .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:9px;}
@@ -140,6 +147,8 @@
     #legend{max-width:190px;font-size:11px;}
     #search{top:58px;width:min(320px,72vw);}
     #toolbox{width:min(250px,72vw);}
+    .leaflet-popup-content{width:228px!important;max-height:52dvh;}
+    .gitem{height:54px;}
   }
   @media (prefers-reduced-motion:reduce){#panel{transition:none;}}
   .leaflet-container{font-family:inherit;}
@@ -155,6 +164,10 @@
       <h1>Prisoners of Geography</h1>
       <div class="sub">Sepuluh peta yang menjelaskan geopolitik dunia</div>
       <div class="author">Tim Marshall · 2015</div>
+    </div>
+    <div class="booksel">
+      <span class="booksel-label">Sumber</span>
+      <select id="bookSel"><option value="all">Semua sumber</option></select>
     </div>
     <div class="list" id="list"></div>
     <div class="p-foot">
@@ -201,8 +214,13 @@
 const C={threat:"#b5432e",water:"#2f7d8f",barrier:"#8a5a2b",claim:"#a23b2c",border:"#243642",brass:"#c08a3e"};
 
 // features per region. types: area, line, border, claim, arrow, point
-const regions=[
- {n:1,name:"Rusia",coord:[57,55],zoom:3,tag:"Dataran terbuka tanpa penghalang",
+// ===== DATA (multi-buku) — tambah buku baru cukup di sini =====
+const BOOKS=[
+ {id:"pog",title:"Prisoners of Geography",author:"Tim Marshall",year:2015,theme:"Geopolitik",color:"#c08a3e"}
+];
+const ENTRIES=[
+ {id:"pog-1",book:"pog",name:"Rusia",coord:[57,55],zoom:3,tag:"Dataran terbuka tanpa penghalang",
+  highlight:{countries:["Russia"]},
   text:"Dataran Eropa Utara yang datar dan terbuka tak punya penghalang alami di barat — sepanjang sejarah menjadi jalur invasi. Karena itu Rusia obsesif mencari negara penyangga (buffer) dan akses ke pelabuhan air hangat yang nyaris tak dimilikinya.",
   features:[
    {type:"area",label:"Dataran Eropa (terbuka)",color:C.threat,fill:"rgba(181,67,46,.14)",coords:[[54,10],[56,38],[53,46],[50,30],[50,12]]},
@@ -213,14 +231,16 @@ const regions=[
    {type:"point",label:"Kaliningrad (akses Baltik)",color:C.brass,coords:[54.7,20.5]},
    {type:"point",label:"Vladivostok (beku di musim dingin)",color:C.water,coords:[43.1,131.9]}
   ]},
- {n:2,name:"China",coord:[20,113],zoom:3,tag:"Benteng Tibet & rantai pulau",
+ {id:"pog-2",book:"pog",name:"China",coord:[20,113],zoom:3,tag:"Benteng Tibet & rantai pulau",
+  highlight:{countries:["China"]},
   text:"Dataran tinggi Tibet menjadi benteng alami terhadap India sekaligus sumber sungai-sungai besar Asia. Ke arah laut, China merasa terkurung oleh rantai pulau, mendorong ambisinya menguasai Laut China Selatan.",
   features:[
    {type:"area",label:"Dataran Tinggi Tibet (benteng)",color:C.barrier,fill:"rgba(138,90,43,.18)",coords:[[36,79],[35,89],[32,99],[29,98],[28,86],[31,80]]},
    {type:"claim",label:"Garis sembilan titik (klaim L. China Selatan)",color:C.claim,coords:[[22,118],[16,111],[10,110],[6,109],[4,112],[8,117],[13,119],[18,120],[21,120]]},
    {type:"line",label:"Rantai pulau pertama",color:C.threat,coords:[[35,140],[31,131],[24,122],[19,121],[13,124],[9,123],[5,118]]}
   ]},
- {n:3,name:"Amerika Serikat",coord:[39,-95],zoom:4,tag:"Sungai layar & dua samudra",
+ {id:"pog-3",book:"pog",name:"Amerika Serikat",coord:[39,-95],zoom:4,tag:"Sungai layar & dua samudra",
+  highlight:{countries:["United States of America"]},
   text:"Diberkati jaringan sungai layar terpanjang di dunia (Mississippi) yang menyatukan ekonomi, plus dua samudra sebagai parit pelindung. Geografi menjadikannya adikuasa yang nyaris mustahil diserang lewat darat.",
   features:[
    {type:"line",label:"Sungai Mississippi",color:C.water,coords:[[47.2,-95.2],[44,-92],[38.6,-90.2],[35,-90],[31,-91.5],[29.2,-89.4]]},
@@ -229,7 +249,8 @@ const regions=[
    {type:"point",label:"Samudra Atlantik — parit pelindung",color:C.brass,coords:[36,-68]},
    {type:"point",label:"Samudra Pasifik — parit pelindung",color:C.brass,coords:[34,-127]}
   ]},
- {n:4,name:"Eropa Barat",coord:[49,10],zoom:4,tag:"Tanah subur, sulit bersatu",
+ {id:"pog-4",book:"pog",name:"Eropa Barat",coord:[49,10],zoom:4,tag:"Tanah subur, sulit bersatu",
+  highlight:{countries:["France","Germany","Netherlands","Belgium","Spain","Portugal","Italy","Switzerland","Austria","Denmark","United Kingdom","Ireland","Luxembourg"]},
   text:"Iklim sedang, tanah subur, dan sungai-sungai yang bisa dilayari memunculkan negara-bangsa yang kaya dan padat. Namun pegunungan dan keragaman bahasa membuat penyatuan penuh selalu sulit dicapai.",
   features:[
    {type:"area",label:"Dataran subur Eropa Barat",color:"#6f8a4a",fill:"rgba(111,138,74,.2)",coords:[[51,-2],[54,13],[52,20],[49,13],[48,1]]},
@@ -237,7 +258,8 @@ const regions=[
    {type:"line",label:"Sungai Donau (Danube)",color:C.water,coords:[[48.2,16.4],[47,19],[45,21],[44.3,28.7]]},
    {type:"line",label:"Pegunungan Alpen (penghalang)",color:C.barrier,coords:[[44,7],[46,10],[47,13],[47.5,15]]}
   ]},
- {n:5,name:"Afrika",coord:[3,21],zoom:3,tag:"Pantai mulus, sungai terputus",
+ {id:"pog-5",book:"pog",name:"Afrika",coord:[3,21],zoom:3,tag:"Pantai mulus, sungai terputus",
+  highlight:{continent:"Africa"},
   text:"Garis pantai relatif mulus dengan sedikit teluk alami, ditambah sungai yang terpotong air terjun, menyulitkan perdagangan dan pelayaran pedalaman. Batas negara warisan kolonial memperparah fragmentasi.",
   features:[
    {type:"area",label:"Gurun Sahara",color:"#c9a54e",fill:"rgba(201,165,78,.25)",coords:[[31,-11],[31,33],[18,34],[16,-16]]},
@@ -246,14 +268,16 @@ const regions=[
    {type:"point",label:"Katarak Nil (pelayaran terputus)",color:C.water,coords:[24,32.9]},
    {type:"point",label:"Air terjun Kongo (pelayaran terputus)",color:C.water,coords:[-5.5,13.5]}
   ]},
- {n:6,name:"Timur Tengah",coord:[30,44],zoom:4,tag:"Batas garis penggaris",
+ {id:"pog-6",book:"pog",name:"Timur Tengah",coord:[30,44],zoom:4,tag:"Batas garis penggaris",
+  highlight:{countries:["Saudi Arabia","Iraq","Iran","Syria","Jordan","Israel","Lebanon","Yemen","Oman","United Arab Emirates","Qatar","Kuwait","Turkey","Egypt"]},
   text:"Batas-batas negara ditarik penggaris kolonial (Sykes–Picot) tanpa peduli suku dan sekte. Gurun yang luas dan kelangkaan air menjadi sumber ketegangan yang permanen.",
   features:[
    {type:"border",label:"Garis Sykes–Picot",color:C.claim,coords:[[32.6,35.1],[33.3,38],[34,40.5],[35.5,44.4]]},
    {type:"area",label:"Gurun & langka air",color:"#c9a54e",fill:"rgba(201,165,78,.22)",coords:[[30,38],[28,50],[19,52],[17,44],[24,38]]},
    {type:"point",label:"Selat Hormuz (choke point minyak)",color:C.threat,coords:[26.6,56.3]}
   ]},
- {n:7,name:"India & Pakistan",coord:[30,78],zoom:4,tag:"Tembok Himalaya",
+ {id:"pog-7",book:"pog",name:"India & Pakistan",coord:[30,78],zoom:4,tag:"Tembok Himalaya",
+  highlight:{countries:["India","Pakistan"]},
   text:"Himalaya raksasa memisahkan India dari China, memaksa persaingan keduanya menyempit ke titik-titik seperti Kashmir. Sungai bersama menambah rapuh hubungan India–Pakistan.",
   features:[
    {type:"line",label:"Pegunungan Himalaya (tembok)",color:C.barrier,coords:[[36,74],[34,78],[31,80],[28,84],[27.5,88],[27,92],[28,95]]},
@@ -261,20 +285,23 @@ const regions=[
    {type:"border",label:"Garis Kontrol / LoC (Kashmir)",color:C.claim,coords:[[34.6,74],[33.7,74.3],[33,75.6]]},
    {type:"point",label:"Kashmir (titik panas)",color:C.threat,coords:[34,76]}
   ]},
- {n:8,name:"Korea & Jepang",coord:[36,132],zoom:4,tag:"Terjepit kekuatan besar",
+ {id:"pog-8",book:"pog",name:"Korea & Jepang",coord:[36,132],zoom:4,tag:"Terjepit kekuatan besar",
+  highlight:{countries:["South Korea","North Korea","Japan"]},
   text:"Terjepit di antara China, Rusia, dan — lewat laut — Amerika Serikat, Semenanjung Korea menjadi medan tarik kekuatan besar. Jepang yang miskin sumber daya sangat bergantung pada jalur laut.",
   features:[
    {type:"border",label:"DMZ (Zona Demiliterisasi Korea)",color:C.threat,coords:[[38.3,126.6],[38,127.5],[38.4,128.4]]},
    {type:"arrow",label:"Jalur laut vital impor Jepang",color:C.water,coords:[[2,105],[33,132]]},
    {type:"line",label:"Rantai pulau pertama",color:C.barrier,coords:[[35,140],[31,131],[24,122]]}
   ]},
- {n:9,name:"Amerika Latin",coord:[-14,-62],zoom:3,tag:"Pedalaman terisolasi",
+ {id:"pog-9",book:"pog",name:"Amerika Latin",coord:[-14,-62],zoom:3,tag:"Pedalaman terisolasi",
+  highlight:{continent:"South America",countries:["Mexico","Guatemala","Belize","Honduras","El Salvador","Nicaragua","Costa Rica","Panama","Cuba","Dominican Republic","Haiti"]},
   text:"Pedalaman yang sulit ditembus, hutan Amazon, dan Pegunungan Andes yang tinggi mengisolasi kawasan — menyulitkan integrasi, transportasi, dan pembangunan ekonomi.",
   features:[
    {type:"line",label:"Pegunungan Andes",color:C.barrier,coords:[[9,-73],[0,-78],[-16,-70],[-33,-70],[-45,-73]]},
    {type:"area",label:"Cekungan Amazon (pedalaman terisolasi)",color:"#3f7d4a",fill:"rgba(63,125,74,.22)",coords:[[-1,-73],[-1,-51],[-9,-49],[-10,-72]]}
   ]},
- {n:10,name:"Arktik",coord:[74,40],zoom:3,tag:"Arena baru yang mencair",
+ {id:"pog-10",book:"pog",name:"Arktik",coord:[74,40],zoom:3,tag:"Arena baru yang mencair",
+  highlight:{countries:["Russia","Canada","United States of America","Norway","Greenland","Iceland","Finland","Sweden","Denmark"]},
   text:"Es yang mencair membuka jalur pelayaran dan cadangan energi baru. Kawasan yang dulu beku kini menjadi arena perebutan baru antara Rusia, Amerika Serikat, dan negara-negara Arktik lainnya.",
   features:[
    {type:"arrow",label:"Jalur Laut Utara (pesisir Rusia)",color:C.threat,coords:[[69,33],[73,55],[76,90],[75,120],[73,150]]},
@@ -282,6 +309,10 @@ const regions=[
    {type:"point",label:"Cadangan energi & perebutan Arktik",color:C.brass,coords:[82,50]}
   ]}
 ];
+const state={book:"all",selectedId:null};
+function bookOf(id){return BOOKS.find(b=>b.id===id);}
+function entryNum(e){return ENTRIES.filter(x=>x.book===e.book).indexOf(e)+1;}
+function visibleEntries(){return state.book==="all"?ENTRIES:ENTRIES.filter(e=>e.book===state.book);}
 
 const esriAttr="Tiles &copy; Esri";
 const physical=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:13,maxNativeZoom:8,attribution:esriAttr});
@@ -303,35 +334,22 @@ physical.on("tileerror",()=>{if(!switched){switched=true;map.removeLayer(physica
 // --- overlay rendering ---
 const overlay=L.layerGroup().addTo(map);
 
-// which countries to outline per region (ADMIN names / continent from Natural Earth)
-const hlMap={
- 1:{countries:["Russia"]},
- 2:{countries:["China"]},
- 3:{countries:["United States of America"]},
- 4:{countries:["France","Germany","Netherlands","Belgium","Spain","Portugal","Italy","Switzerland","Austria","Denmark","United Kingdom","Ireland","Luxembourg"]},
- 5:{continent:"Africa"},
- 6:{countries:["Saudi Arabia","Iraq","Iran","Syria","Jordan","Israel","Lebanon","Yemen","Oman","United Arab Emirates","Qatar","Kuwait","Turkey","Egypt"]},
- 7:{countries:["India","Pakistan"]},
- 8:{countries:["South Korea","North Korea","Japan"]},
- 9:{continent:"South America",countries:["Mexico","Guatemala","Belize","Honduras","El Salvador","Nicaragua","Costa Rica","Panama","Cuba","Dominican Republic","Haiti"]},
- 10:{countries:["Russia","Canada","United States of America","Norway","Greenland","Iceland","Finland","Sweden","Denmark"]}
-};
-let worldGeo=null, selectedN=null;
+let worldGeo=null;
 fetch("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson")
- .then(r=>r.json()).then(j=>{worldGeo=j; if(selectedN)drawOverlay(regions.find(x=>x.n===selectedN));})
+ .then(r=>r.json()).then(j=>{worldGeo=j; if(state.selectedId)drawOverlay(ENTRIES.find(x=>x.id===state.selectedId));})
  .catch(()=>{});
 
-function drawHighlight(n){
-  if(!worldGeo)return;
-  const cfg=hlMap[n]; if(!cfg)return;
-  const set=new Set(cfg.countries||[]);
+function drawHighlight(e){
+  if(!worldGeo||!e.highlight)return;
+  const cfg=e.highlight, set=new Set(cfg.countries||[]);
+  const b=bookOf(e.book), col=(b&&b.color)||"#c08a3e";
   const feats=worldGeo.features.filter(f=>{
     const p=f.properties;
     return set.has(p.ADMIN)||set.has(p.NAME)||set.has(p.SOVEREIGNT)||(cfg.continent&&p.CONTINENT===cfg.continent);
   });
   if(!feats.length)return;
   L.geoJSON({type:"FeatureCollection",features:feats},
-    {style:{color:"#c08a3e",weight:3,fillColor:"#c08a3e",fillOpacity:.12,opacity:.95}}).addTo(overlay);
+    {style:{color:col,weight:3,fillColor:col,fillOpacity:.12,opacity:.95}}).addTo(overlay);
 }
 
 function toRad(d){return d*Math.PI/180;} function toDeg(r){return r*180/Math.PI;}
@@ -360,19 +378,19 @@ function drawFeature(f){
     cm.bindTooltip(f.label,{className:"flabel",direction:"top",permanent:false});
   }
 }
-function drawOverlay(r){
+function drawOverlay(e){
   overlay.clearLayers();
-  selectedN=r.n;
-  drawHighlight(r.n);
-  r.features.forEach(drawFeature);
-  buildLegend(r);
+  state.selectedId=e.id;
+  drawHighlight(e);
+  e.features.forEach(drawFeature);
+  buildLegend(e);
 }
-function buildLegend(r){
-  const box=document.getElementById("legend");
-  document.getElementById("leg-title").textContent="Legenda — "+r.name;
+function buildLegend(e){
+  const b=bookOf(e.book);
+  document.getElementById("leg-title").textContent="Legenda — "+e.name;
   const seen=new Set(); let html="";
-  if(hlMap[r.n]) html+=`<div class="leg-row"><span class="swatch" style="background:#c08a3e;opacity:.4;border:2px solid #c08a3e"></span><span>Batas negara kawasan ini (disorot)</span></div>`;
-  r.features.forEach(f=>{
+  if(e.highlight) html+=`<div class="leg-row"><span class="swatch" style="background:${b.color};opacity:.5;border:2px solid ${b.color}"></span><span>Batas negara disorot</span></div>`;
+  e.features.forEach(f=>{
     const key=f.type+"|"+f.label; if(seen.has(key))return; seen.add(key);
     let sw="";
     if(f.type==="area")sw=`<span class="swatch" style="background:${f.color};opacity:.35"></span>`;
@@ -381,45 +399,86 @@ function buildLegend(r){
     else if(f.type==="claim")sw=`<span class="swatch dash" style="border-color:${f.color}"></span>`;
     else if(f.type==="arrow")sw=`<span class="swatch line" style="border-color:${f.color}"></span>`;
     else sw=`<span class="swatch pt" style="background:${f.color};border:2px solid #132430"></span>`;
-    html+=`<div class="leg-row">${sw}<span>${f.label}</span></div>`;
+    html+=`<div class="leg-row">${sw}<span>${esc(f.label)}</span></div>`;
   });
+  html+=`<div class="leg-src">Sumber: ${esc(b.title)} (${esc(b.author)}, ${b.year})</div>`;
   document.getElementById("leg-body").innerHTML=html;
-  box.style.display="block";
+  document.getElementById("legend").style.display="block";
 }
 
 // --- markers ---
 const markers={};
-function makeIcon(n,active){return L.divIcon({className:"",html:`<div class="pin${active?' active':''}"><span>${n}</span></div>`,iconSize:[30,30],iconAnchor:[15,28],popupAnchor:[0,-28]});}
-regions.forEach(r=>{
-  const m=L.marker(r.coord,{icon:makeIcon(r.n,false)}).addTo(map);
-  m.bindPopup(`<div class="pop"><div class="pop-eyebrow">Kawasan ${r.n} dari 10</div><h3>${r.name}</h3><p>${r.text}</p><span class="tag">${r.tag}</span></div>`);
-  m.on("popupopen",()=>select(r.n));
-  markers[r.n]=m;
+function makeIcon(e,active){
+  const b=bookOf(e.book);
+  const style=active?"":`background:${b?b.color:"#c08a3e"}`;
+  return L.divIcon({className:"",html:`<div class="pin${active?' active':''}" style="${style}"><span>${entryNum(e)}</span></div>`,
+    iconSize:[30,30],iconAnchor:[15,28],popupAnchor:[0,-28]});
+}
+ENTRIES.forEach(e=>{
+  const b=bookOf(e.book);
+  const m=L.marker(e.coord,{icon:makeIcon(e,false)});
+  m.bindPopup(`<div class="pop"><div class="pop-eyebrow">${esc(b.title)} · ${esc(b.theme)}</div><h3>${esc(e.name)}</h3><p>${esc(e.text)}</p><span class="tag">${esc(e.tag)}</span><div class="psrc">Sumber: ${esc(b.title)} — ${esc(e.name)}</div></div>`,{maxWidth:300,keepInView:true,autoPanPaddingTopLeft:[12,110],autoPanPaddingBottomRight:[12,30]});
+  m.on("popupopen",()=>selectEntry(e.id));
+  markers[e.id]=m;
 });
+function refreshMarkers(){
+  const vis=new Set(visibleEntries().map(e=>e.id));
+  ENTRIES.forEach(e=>{
+    const m=markers[e.id];
+    if(vis.has(e.id)){ if(!map.hasLayer(m))m.addTo(map); m.setIcon(makeIcon(e,e.id===state.selectedId)); }
+    else if(map.hasLayer(m))map.removeLayer(m);
+  });
+}
 
-// --- list ---
+// --- book selector + list ---
 const listEl=document.getElementById("list");
-regions.forEach(r=>{
-  const el=document.createElement("div");el.className="region";el.dataset.n=r.n;
-  el.innerHTML=`<div class="num">${r.n}</div><div class="r-body"><h3>${r.name}</h3><p>${r.tag}</p></div>`;
-  el.addEventListener("click",()=>goTo(r.n));listEl.appendChild(el);
-});
+function renderList(){
+  listEl.innerHTML="";
+  const books=state.book==="all"?BOOKS:BOOKS.filter(b=>b.id===state.book);
+  books.forEach(b=>{
+    if(state.book==="all"){
+      const h=document.createElement("div");h.className="grp";
+      h.innerHTML=`<span class="grp-dot" style="background:${b.color}"></span>${esc(b.title)}`;
+      listEl.appendChild(h);
+    }
+    ENTRIES.filter(e=>e.book===b.id).forEach(e=>{
+      const el=document.createElement("div");el.className="region";el.dataset.id=e.id;
+      el.innerHTML=`<div class="num" style="background:${b.color}">${entryNum(e)}</div><div class="r-body"><h3>${esc(e.name)}</h3><p>${esc(e.tag)}</p></div>`;
+      el.addEventListener("click",()=>goToEntry(e.id));
+      listEl.appendChild(el);
+    });
+  });
+}
+function populateBookSelect(){
+  const sel=document.getElementById("bookSel");
+  BOOKS.forEach(b=>{const o=document.createElement("option");o.value=b.id;o.textContent=b.title;sel.appendChild(o);});
+  sel.addEventListener("change",()=>{
+    state.book=sel.value; state.selectedId=null;
+    overlay.clearLayers(); document.getElementById("legend").style.display="none";
+    renderList(); refreshMarkers();
+  });
+}
 
-function select(n){
-  const r=regions.find(x=>x.n===n);
-  document.querySelectorAll(".region").forEach(e=>e.classList.toggle("active",+e.dataset.n===n));
-  regions.forEach(x=>markers[x.n].setIcon(makeIcon(x.n,x.n===n)));
-  drawOverlay(r);
-  const active=document.querySelector(`.region[data-n="${n}"]`);
+function selectEntry(id){
+  const e=ENTRIES.find(x=>x.id===id); if(!e)return;
+  state.selectedId=id;
+  document.querySelectorAll(".region").forEach(el=>el.classList.toggle("active",el.dataset.id===id));
+  refreshMarkers();
+  drawOverlay(e);
+  const active=document.querySelector(`.region[data-id="${id}"]`);
   if(active)active.scrollIntoView({block:"nearest",behavior:"smooth"});
 }
-function goTo(n){
-  const r=regions.find(x=>x.n===n);
-  select(n);
-  map.flyTo(r.coord,r.zoom,{duration:1.1});
-  setTimeout(()=>markers[n].openPopup(),700);
+function goToEntry(id){
+  const e=ENTRIES.find(x=>x.id===id); if(!e)return;
+  selectEntry(id);
+  map.flyTo(e.coord,e.zoom,{duration:1.1});
+  setTimeout(()=>{if(markers[id])markers[id].openPopup();},700);
   if(window.innerWidth<=760)setCollapsed(true);
 }
+
+populateBookSelect();
+renderList();
+refreshMarkers();
 // --- left panel collapse (all screen sizes) ---
 const appEl=document.getElementById("app");
 function setCollapsed(c){appEl.classList.toggle("panel-collapsed",c);}
@@ -518,7 +577,7 @@ async function goToResult(d){
   const parts=d.display_name.split(","), short=parts[0].trim();
   const country=parts.length>1?parts[parts.length-1].trim():"";
   const full=d.display_name, query=(short+" "+country).trim();
-  searchMarker.bindPopup(popupHTML(short,full,null,null,true),{maxWidth:300}).openPopup();
+  searchMarker.bindPopup(popupHTML(short,full,null,null,true),{maxWidth:300,keepInView:true,autoPanPaddingTopLeft:[12,120],autoPanPaddingBottomRight:[12,30]}).openPopup();
   map.flyTo([lat,lon],9,{duration:1.1});
   resBox.classList.remove("show");
   if(window.innerWidth<=760)setCollapsed(true);
