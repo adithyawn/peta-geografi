@@ -136,6 +136,21 @@
   .pex{margin-top:6px;font-size:11.5px;line-height:1.45;padding-right:4px;}
   .pmore{display:inline-block;margin-top:7px;font-size:11.5px;color:#2f7d8f;font-weight:700;text-decoration:none;}
   .pmore:hover{text-decoration:underline;}
+  #resultCard{position:fixed;z-index:1400;background:var(--parch);border:2px solid var(--ink);border-radius:12px;
+    box-shadow:0 12px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;}
+  #resultCard.hidden{display:none;}
+  #rcClose{position:absolute;top:8px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;
+    border:2px solid var(--ink);background:var(--parch);color:var(--ink);font-size:19px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+  #rcClose:hover{background:var(--brass);}
+  #rcBody{overflow-y:auto;padding:16px 16px 18px;}
+  #rcBody .pop{width:auto;}
+  @media (min-width:761px){
+    #resultCard{top:70px;left:50%;transform:translateX(-50%);width:360px;max-height:76vh;}
+  }
+  @media (max-width:760px){
+    #resultCard{left:8px;right:8px;bottom:8px;max-height:64dvh;}
+  }
   .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:9px;}
   .gitem{display:block;height:64px;border-radius:5px;overflow:hidden;border:1px solid #132430;background:#d9cdb2;}
   .gitem img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -205,6 +220,10 @@
           <div id="trOut" class="tr-out"></div>
         </div>
       </div>
+    </div>
+    <div id="resultCard" class="hidden">
+      <button id="rcClose" title="Tutup">&times;</button>
+      <div id="rcBody"></div>
     </div>
   </div>
 </div>
@@ -569,25 +588,28 @@ function popupHTML(short,full,info,photos,loading){
          '<div class="pop-eyebrow">Hasil pencarian</div><h3>'+esc(short)+'</h3>'+
          '<p style="font-size:11px;color:#6b6250">'+esc(full)+'</p>'+ex+'</div>';
 }
+function showCard(html){document.getElementById("rcBody").innerHTML=html;document.getElementById("rcBody").scrollTop=0;document.getElementById("resultCard").classList.remove("hidden");}
+function hideCard(){document.getElementById("resultCard").classList.add("hidden");}
+document.getElementById("rcClose").addEventListener("click",hideCard);
 async function goToResult(d){
   const lat=+d.lat, lon=+d.lon;
   if(searchMarker)map.removeLayer(searchMarker);
-  const icon=L.divIcon({className:"",html:'<div class="spin"></div>',iconSize:[28,28],iconAnchor:[14,26],popupAnchor:[0,-24]});
+  const icon=L.divIcon({className:"",html:'<div class="spin"></div>',iconSize:[28,28],iconAnchor:[14,26]});
   searchMarker=L.marker([lat,lon],{icon}).addTo(map);
   const parts=d.display_name.split(","), short=parts[0].trim();
   const country=parts.length>1?parts[parts.length-1].trim():"";
   const full=d.display_name, query=(short+" "+country).trim();
-  searchMarker.bindPopup(popupHTML(short,full,null,null,true),{maxWidth:300,keepInView:true,autoPanPaddingTopLeft:[12,120],autoPanPaddingBottomRight:[12,30]}).openPopup();
+  showCard(popupHTML(short,full,null,null,true));
   map.flyTo([lat,lon],9,{duration:1.1});
   resBox.classList.remove("show");
   if(window.innerWidth<=760)setCollapsed(true);
   const [info,photos]=await Promise.all([wikiInfo(short),fetchPhotos(query)]);
-  if(searchMarker)searchMarker.setPopupContent(popupHTML(short,full,info,photos,false));
+  showCard(popupHTML(short,full,info,photos,false));
 }
 document.getElementById("qbtn").addEventListener("click",doSearch);
 qEl.addEventListener("keydown",e=>{if(e.key==="Enter")doSearch();});
 document.getElementById("clear").addEventListener("click",()=>{
-  qEl.value="";resBox.classList.remove("show");resBox.innerHTML="";
+  qEl.value="";resBox.classList.remove("show");resBox.innerHTML="";hideCard();
   if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}
   qEl.focus();
 });
