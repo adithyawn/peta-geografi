@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Peta Interaktif Detail — Prisoners of Geography</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
@@ -74,7 +74,7 @@
   .pop p{font-size:12.5px;color:#3f3a30;line-height:1.5;}
   .pop .tag{display:inline-block;margin-top:9px;font-size:10.5px;background:var(--ink);color:var(--parch);padding:3px 9px;border-radius:20px;}
 
-  #legend{position:absolute;left:12px;bottom:20px;z-index:1100;background:rgba(239,230,211,.96);
+  #legend{position:absolute;left:12px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:1100;background:rgba(239,230,211,.96);
     border:2px solid var(--ink);border-radius:8px;padding:11px 14px;max-width:240px;
     box-shadow:0 6px 20px rgba(0,0,0,.4);display:none;}
   #legend h4{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:7px;}
@@ -105,7 +105,7 @@
   #clear{border:none;background:transparent;color:#8a806c;font-size:20px;line-height:1;padding:0 8px;cursor:pointer;}
   #clear:hover{color:var(--ink);}
 
-  #toolbox{position:absolute;right:12px;bottom:16px;z-index:1100;width:250px;max-width:78vw;
+  #toolbox{position:absolute;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:1100;width:250px;max-width:78vw;
     background:rgba(239,230,211,.97);border:2px solid var(--ink);border-radius:9px;
     box-shadow:0 6px 20px rgba(0,0,0,.4);overflow:hidden;
     display:flex;flex-direction:column;max-height:calc(100dvh - 90px);}
@@ -149,7 +149,7 @@
     #resultCard{top:70px;left:50%;transform:translateX(-50%);width:360px;max-height:76vh;}
   }
   @media (max-width:760px){
-    #resultCard{left:8px;right:8px;bottom:8px;max-height:64dvh;}
+    #resultCard{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));max-height:60dvh;}
   }
   .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:9px;}
   .gitem{display:block;height:64px;border-radius:5px;overflow:hidden;border:1px solid #132430;background:#d9cdb2;}
@@ -588,8 +588,16 @@ function popupHTML(short,full,info,photos,loading){
          '<div class="pop-eyebrow">Hasil pencarian</div><h3>'+esc(short)+'</h3>'+
          '<p style="font-size:11px;color:#6b6250">'+esc(full)+'</p>'+ex+'</div>';
 }
-function showCard(html){document.getElementById("rcBody").innerHTML=html;document.getElementById("rcBody").scrollTop=0;document.getElementById("resultCard").classList.remove("hidden");}
-function hideCard(){document.getElementById("resultCard").classList.add("hidden");}
+function showCard(html){
+  document.getElementById("rcBody").innerHTML=html;
+  document.getElementById("rcBody").scrollTop=0;
+  document.getElementById("resultCard").classList.remove("hidden");
+  if(window.innerWidth<=760)document.getElementById("toolbox").style.display="none";
+}
+function hideCard(){
+  document.getElementById("resultCard").classList.add("hidden");
+  document.getElementById("toolbox").style.display="";
+}
 document.getElementById("rcClose").addEventListener("click",hideCard);
 async function goToResult(d){
   const lat=+d.lat, lon=+d.lon;
