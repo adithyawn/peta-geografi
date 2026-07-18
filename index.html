@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peta Interaktif Detail — Prisoners of Geography</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{
+    --ink:#132430; --ink-2:#1d3646;
+    --parch:#efe6d3; --parch-2:#e4d7bd;
+    --brass:#c08a3e; --text:#22333d;
+    --threat:#b5432e; --water:#2f7d8f; --barrier:#8a5a2b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:"Segoe UI",Tahoma,Verdana,sans-serif;background:var(--ink);color:var(--text);overflow:hidden;}
+  #app{display:flex;height:100vh;height:100dvh;width:100vw;}
+
+  #panel{width:370px;flex:0 0 370px;height:100%;
+    background:linear-gradient(180deg,var(--parch),var(--parch-2));
+    border-right:3px solid var(--ink);display:flex;flex-direction:column;
+    box-shadow:6px 0 24px rgba(0,0,0,.35);z-index:1200;transition:margin-left .3s ease;}
+  #app.panel-collapsed #panel{margin-left:-374px;}
+  .p-head{padding:20px 24px 16px;border-bottom:1px solid rgba(19,36,48,.22);position:relative;
+    background:repeating-linear-gradient(45deg,rgba(19,36,48,.03) 0 6px,transparent 6px 12px);}
+  #panelCollapse{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:7px;
+    border:2px solid var(--ink);background:var(--parch);color:var(--ink);font-size:16px;font-weight:700;
+    line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  #panelCollapse:hover{background:var(--brass);}
+  .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--brass);font-weight:700;margin-bottom:8px;}
+  .p-head h1{font-family:Georgia,"Times New Roman",serif;font-size:25px;line-height:1.08;color:var(--ink);font-weight:700;}
+  .p-head .sub{margin-top:7px;font-size:12.5px;color:#5a5140;font-style:italic;line-height:1.4;}
+  .p-head .author{margin-top:9px;font-size:12px;color:var(--ink);font-weight:600;}
+
+  .list{overflow-y:auto;flex:1;padding:8px 12px 16px;}
+  .list::-webkit-scrollbar{width:9px;}
+  .list::-webkit-scrollbar-thumb{background:var(--brass);border-radius:6px;}
+  .list::-webkit-scrollbar-track{background:rgba(19,36,48,.08);}
+  .region{display:flex;gap:13px;align-items:flex-start;padding:11px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:.15s;}
+  .region:hover{background:rgba(255,255,255,.5);border-color:rgba(192,138,62,.5);}
+  .region.active{background:#fff;border-color:var(--brass);box-shadow:0 2px 10px rgba(19,36,48,.18);}
+  .num{flex:0 0 34px;height:34px;width:34px;border-radius:50%;background:var(--ink);color:var(--parch);
+    display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:15px;border:2px solid var(--brass);}
+  .region.active .num{background:var(--brass);color:var(--ink);border-color:var(--ink);}
+  .r-body h3{font-size:14.5px;color:var(--ink);font-weight:700;margin-bottom:2px;}
+  .r-body p{font-size:12px;color:#5f5644;line-height:1.35;}
+  .p-foot{padding:11px 20px;font-size:11px;color:#6b6250;border-top:1px solid rgba(19,36,48,.2);line-height:1.4;}
+  .p-foot b{color:var(--ink);}
+
+  #map{flex:1;height:100%;background:var(--ink-2);position:relative;}
+
+  .pin{height:30px;width:30px;border-radius:50% 50% 50% 0;background:var(--brass);transform:rotate(-45deg);
+    border:2px solid var(--ink);box-shadow:0 3px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;}
+  .pin span{transform:rotate(45deg);color:var(--ink);font-family:Georgia,serif;font-weight:700;font-size:14px;}
+  .pin.active{background:var(--parch);border-color:var(--brass);box-shadow:0 0 0 6px rgba(192,138,62,.4),0 3px 8px rgba(0,0,0,.4);}
+
+  .ah{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:13px solid var(--c);filter:drop-shadow(0 1px 1px rgba(0,0,0,.5));}
+  .flabel{background:rgba(19,36,48,.9);color:var(--parch);border:none;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.4);}
+  .flabel::before{display:none;}
+
+  .leaflet-popup-content-wrapper{background:var(--parch);border-radius:8px;border:2px solid var(--ink);box-shadow:0 8px 30px rgba(0,0,0,.5);}
+  .leaflet-popup-tip{background:var(--parch);border:2px solid var(--ink);}
+  .leaflet-popup-content{margin:14px 16px;width:280px!important;}
+  .pop-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass);font-weight:700;}
+  .pop h3{font-family:Georgia,serif;font-size:19px;color:var(--ink);margin:3px 0 8px;line-height:1.1;}
+  .pop p{font-size:12.5px;color:#3f3a30;line-height:1.5;}
+  .pop .tag{display:inline-block;margin-top:9px;font-size:10.5px;background:var(--ink);color:var(--parch);padding:3px 9px;border-radius:20px;}
+
+  #legend{position:absolute;left:12px;bottom:20px;z-index:1100;background:rgba(239,230,211,.96);
+    border:2px solid var(--ink);border-radius:8px;padding:11px 14px;max-width:240px;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);display:none;}
+  #legend h4{font-family:Georgia,serif;font-size:14px;color:var(--ink);margin-bottom:7px;}
+  .leg-row{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:11.5px;color:#3f3a30;line-height:1.25;}
+  .swatch{flex:0 0 22px;height:12px;border-radius:2px;}
+  .swatch.line{height:0;border-top:3px solid;}
+  .swatch.dash{height:0;border-top:3px dashed;}
+  .swatch.arw{position:relative;height:0;border-top:3px solid;}
+  .swatch.pt{border-radius:50%;width:12px;height:12px;flex:0 0 12px;}
+
+  #toggle{display:none;position:absolute;top:12px;left:12px;z-index:1300;background:var(--parch);color:var(--ink);
+    border:2px solid var(--ink);border-radius:8px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4);}
+  #app.panel-collapsed #toggle{display:block;}
+
+  #search{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:1250;width:min(380px,78vw);}
+  .sbar{display:flex;background:var(--parch);border:2px solid var(--ink);border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  #q{flex:1;border:none;padding:9px 12px;font-size:13px;background:transparent;color:var(--ink);outline:none;font-family:inherit;}
+  #q::placeholder{color:#8a806c;}
+  #qbtn{border:none;background:var(--ink);color:var(--parch);padding:0 16px;font-weight:700;cursor:pointer;font-size:13px;}
+  #qbtn:hover{background:var(--brass);color:var(--ink);}
+  #results{margin-top:6px;background:var(--parch);border:2px solid var(--ink);border-radius:8px;overflow:hidden;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  #results.show{display:block;}
+  .res{padding:8px 12px;font-size:12.5px;color:var(--text);cursor:pointer;border-bottom:1px solid rgba(19,36,48,.12);line-height:1.3;}
+  .res:last-child{border-bottom:none;}
+  .res:hover{background:#fff;}
+  .res.msg{cursor:default;color:#6b6250;}
+  .spin{height:28px;width:28px;border-radius:50% 50% 50% 0;background:var(--water);transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.5);}
+  #clear{border:none;background:transparent;color:#8a806c;font-size:20px;line-height:1;padding:0 8px;cursor:pointer;}
+  #clear:hover{color:var(--ink);}
+
+  #toolbox{position:absolute;right:12px;bottom:16px;z-index:1100;width:250px;max-width:78vw;
+    background:rgba(239,230,211,.97);border:2px solid var(--ink);border-radius:9px;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);overflow:hidden;
+    display:flex;flex-direction:column;max-height:calc(100dvh - 90px);}
+  .tb-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;background:var(--ink);color:var(--parch);
+    padding:7px 12px;font-family:Georgia,serif;font-size:13px;font-weight:700;}
+  #tbToggle{border:none;background:transparent;color:var(--parch);font-size:18px;line-height:1;cursor:pointer;padding:0 4px;}
+  .tb-body{flex:1 1 auto;padding:10px 12px;overflow-y:auto;}
+  .tb-body.hidden{display:none;}
+  .tool{padding:4px 0;}
+  .tool+.tool{margin-top:10px;border-top:1px solid rgba(19,36,48,.18);padding-top:10px;}
+  .tool-title{font-weight:700;color:var(--ink);font-size:12.5px;margin-bottom:7px;}
+  .mrow{display:flex;gap:8px;align-items:center;}
+  #toolbox button{border:none;border-radius:6px;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;}
+  #mBtn{background:var(--ink);color:var(--parch);}
+  #mBtn.on{background:var(--threat);color:#fff;}
+  #mClear,#trId,#trEn{background:var(--ink);color:var(--parch);}
+  #mClear{background:transparent;color:var(--ink);text-decoration:underline;padding:6px 2px;}
+  #mOut{display:block;margin-top:7px;color:var(--ink);line-height:1.35;font-size:12px;}
+  #mOut b{font-weight:700;}
+  .map-measuring{cursor:crosshair!important;}
+  #trIn{width:100%;box-sizing:border-box;border:1.5px solid var(--ink);border-radius:6px;padding:6px 8px;
+    font-family:inherit;font-size:12.5px;color:var(--text);resize:vertical;background:#fff;}
+  .tr-btns{display:flex;gap:6px;margin-top:7px;}
+  #trId:hover,#trEn:hover,#mBtn:hover{background:var(--brass);color:var(--ink);}
+  .tr-out{margin-top:8px;font-size:12px;color:var(--text);line-height:1.4;}
+  .tr-out ul{margin:2px 0 0 16px;padding:0;}
+  .tr-out b{color:var(--ink);}
+  .pex{margin-top:6px;font-size:11.5px;line-height:1.45;max-height:130px;overflow-y:auto;padding-right:4px;}
+  .pmore{display:inline-block;margin-top:7px;font-size:11.5px;color:#2f7d8f;font-weight:700;text-decoration:none;}
+  .pmore:hover{text-decoration:underline;}
+  .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:9px;}
+  .gitem{display:block;height:64px;border-radius:5px;overflow:hidden;border:1px solid #132430;background:#d9cdb2;}
+  .gitem img{width:100%;height:100%;object-fit:cover;display:block;}
+  .galmsg{font-size:11px;color:#8a806c;margin-bottom:7px;}
+
+  @media (max-width:760px){
+    #panel{position:absolute;left:0;top:0;bottom:0;width:85%;max-width:340px;margin-left:0!important;transform:translateX(0);transition:transform .28s ease;}
+    #app.panel-collapsed #panel{transform:translateX(-102%);}
+    #legend{max-width:190px;font-size:11px;}
+    #search{top:58px;width:min(320px,72vw);}
+    #toolbox{width:min(250px,72vw);}
+  }
+  @media (prefers-reduced-motion:reduce){#panel{transition:none;}}
+  .leaflet-container{font-family:inherit;}
+</style>
+</head>
+<body>
+<div id="app">
+  <button id="toggle">☰ Daftar Kawasan</button>
+  <aside id="panel">
+    <div class="p-head">
+      <button id="panelCollapse" title="Sembunyikan panel">&laquo;</button>
+      <div class="eyebrow">Peta Interaktif · Versi Detail</div>
+      <h1>Prisoners of Geography</h1>
+      <div class="sub">Sepuluh peta yang menjelaskan geopolitik dunia</div>
+      <div class="author">Tim Marshall · 2015</div>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="p-foot">
+      Klik kawasan untuk terbang ke sana dan menampilkan <b>fitur geopolitiknya</b> di peta — jalur invasi, klaim wilayah, penghalang alami, sungai, dan rute strategis. Fitur digambar <b>skematis</b> sebagai ilustrasi, bukan batas survei presisi.
+    </div>
+  </aside>
+  <div id="map">
+    <div id="search">
+      <div class="sbar">
+        <input id="q" type="text" placeholder="Cari lokasi… (mis. Yekaterinburg)" autocomplete="off">
+        <button id="clear" title="Bersihkan">&times;</button>
+        <button id="qbtn">Cari</button>
+      </div>
+      <div id="results"></div>
+    </div>
+    <div id="legend"><h4 id="leg-title">Legenda</h4><div id="leg-body"></div></div>
+    <div id="toolbox">
+      <div class="tb-head"><span>Alat</span><button id="tbToggle" title="Sembunyikan alat">–</button></div>
+      <div class="tb-body" id="tbBody">
+        <div class="tool">
+          <div class="tool-title">📏 Ukur jarak (km)</div>
+          <div class="mrow">
+            <button id="mBtn">Mulai ukur</button>
+            <button id="mClear">Hapus</button>
+          </div>
+          <span id="mOut"></span>
+        </div>
+        <div class="tool">
+          <div class="tool-title">🌐 Terjemah</div>
+          <textarea id="trIn" rows="2" placeholder="Ketik kata / kalimat Inggris…"></textarea>
+          <div class="tr-btns">
+            <button id="trId">→ Indonesia</button>
+            <button id="trEn">→ English (definisi)</button>
+          </div>
+          <div id="trOut" class="tr-out"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const C={threat:"#b5432e",water:"#2f7d8f",barrier:"#8a5a2b",claim:"#a23b2c",border:"#243642",brass:"#c08a3e"};
+
+// features per region. types: area, line, border, claim, arrow, point
+const regions=[
+ {n:1,name:"Rusia",coord:[57,55],zoom:3,tag:"Dataran terbuka tanpa penghalang",
+  text:"Dataran Eropa Utara yang datar dan terbuka tak punya penghalang alami di barat — sepanjang sejarah menjadi jalur invasi. Karena itu Rusia obsesif mencari negara penyangga (buffer) dan akses ke pelabuhan air hangat yang nyaris tak dimilikinya.",
+  features:[
+   {type:"area",label:"Dataran Eropa (terbuka)",color:C.threat,fill:"rgba(181,67,46,.14)",coords:[[54,10],[56,38],[53,46],[50,30],[50,12]]},
+   {type:"line",label:"Pegunungan Ural (batas Eropa–Asia)",color:C.barrier,coords:[[68,66],[66,63],[64,60],[61,59.5],[57,60],[54,59],[51,58.5]]},
+   {type:"arrow",label:"Jalur invasi dari barat",color:C.threat,coords:[[52.2,19],[55.6,37.4]]},
+   {type:"arrow",label:"Serangan dari barat daya",color:C.threat,coords:[[48.5,31],[54.8,37]]},
+   {type:"point",label:"Sevastopol (pelabuhan air hangat)",color:C.brass,coords:[44.6,33.5]},
+   {type:"point",label:"Kaliningrad (akses Baltik)",color:C.brass,coords:[54.7,20.5]},
+   {type:"point",label:"Vladivostok (beku di musim dingin)",color:C.water,coords:[43.1,131.9]}
+  ]},
+ {n:2,name:"China",coord:[20,113],zoom:3,tag:"Benteng Tibet & rantai pulau",
+  text:"Dataran tinggi Tibet menjadi benteng alami terhadap India sekaligus sumber sungai-sungai besar Asia. Ke arah laut, China merasa terkurung oleh rantai pulau, mendorong ambisinya menguasai Laut China Selatan.",
+  features:[
+   {type:"area",label:"Dataran Tinggi Tibet (benteng)",color:C.barrier,fill:"rgba(138,90,43,.18)",coords:[[36,79],[35,89],[32,99],[29,98],[28,86],[31,80]]},
+   {type:"claim",label:"Garis sembilan titik (klaim L. China Selatan)",color:C.claim,coords:[[22,118],[16,111],[10,110],[6,109],[4,112],[8,117],[13,119],[18,120],[21,120]]},
+   {type:"line",label:"Rantai pulau pertama",color:C.threat,coords:[[35,140],[31,131],[24,122],[19,121],[13,124],[9,123],[5,118]]}
+  ]},
+ {n:3,name:"Amerika Serikat",coord:[39,-95],zoom:4,tag:"Sungai layar & dua samudra",
+  text:"Diberkati jaringan sungai layar terpanjang di dunia (Mississippi) yang menyatukan ekonomi, plus dua samudra sebagai parit pelindung. Geografi menjadikannya adikuasa yang nyaris mustahil diserang lewat darat.",
+  features:[
+   {type:"line",label:"Sungai Mississippi",color:C.water,coords:[[47.2,-95.2],[44,-92],[38.6,-90.2],[35,-90],[31,-91.5],[29.2,-89.4]]},
+   {type:"line",label:"Sungai Missouri",color:C.water,coords:[[47.6,-111],[46,-100],[41,-96],[38.8,-90.3]]},
+   {type:"line",label:"Sungai Ohio",color:C.water,coords:[[40.4,-80],[38,-85],[37,-88.5],[36.9,-89.1]]},
+   {type:"point",label:"Samudra Atlantik — parit pelindung",color:C.brass,coords:[36,-68]},
+   {type:"point",label:"Samudra Pasifik — parit pelindung",color:C.brass,coords:[34,-127]}
+  ]},
+ {n:4,name:"Eropa Barat",coord:[49,10],zoom:4,tag:"Tanah subur, sulit bersatu",
+  text:"Iklim sedang, tanah subur, dan sungai-sungai yang bisa dilayari memunculkan negara-bangsa yang kaya dan padat. Namun pegunungan dan keragaman bahasa membuat penyatuan penuh selalu sulit dicapai.",
+  features:[
+   {type:"area",label:"Dataran subur Eropa Barat",color:"#6f8a4a",fill:"rgba(111,138,74,.2)",coords:[[51,-2],[54,13],[52,20],[49,13],[48,1]]},
+   {type:"line",label:"Sungai Rhine",color:C.water,coords:[[46.5,8.5],[49,7.6],[51,6.5],[52,6.2]]},
+   {type:"line",label:"Sungai Donau (Danube)",color:C.water,coords:[[48.2,16.4],[47,19],[45,21],[44.3,28.7]]},
+   {type:"line",label:"Pegunungan Alpen (penghalang)",color:C.barrier,coords:[[44,7],[46,10],[47,13],[47.5,15]]}
+  ]},
+ {n:5,name:"Afrika",coord:[3,21],zoom:3,tag:"Pantai mulus, sungai terputus",
+  text:"Garis pantai relatif mulus dengan sedikit teluk alami, ditambah sungai yang terpotong air terjun, menyulitkan perdagangan dan pelayaran pedalaman. Batas negara warisan kolonial memperparah fragmentasi.",
+  features:[
+   {type:"area",label:"Gurun Sahara",color:"#c9a54e",fill:"rgba(201,165,78,.25)",coords:[[31,-11],[31,33],[18,34],[16,-16]]},
+   {type:"border",label:"Batas garis lurus kolonial",color:C.border,coords:[[31.6,25],[22,25]]},
+   {type:"border",label:"Batas garis lurus kolonial",color:C.border,coords:[[24,-5],[19,-5]]},
+   {type:"point",label:"Katarak Nil (pelayaran terputus)",color:C.water,coords:[24,32.9]},
+   {type:"point",label:"Air terjun Kongo (pelayaran terputus)",color:C.water,coords:[-5.5,13.5]}
+  ]},
+ {n:6,name:"Timur Tengah",coord:[30,44],zoom:4,tag:"Batas garis penggaris",
+  text:"Batas-batas negara ditarik penggaris kolonial (Sykes–Picot) tanpa peduli suku dan sekte. Gurun yang luas dan kelangkaan air menjadi sumber ketegangan yang permanen.",
+  features:[
+   {type:"border",label:"Garis Sykes–Picot",color:C.claim,coords:[[32.6,35.1],[33.3,38],[34,40.5],[35.5,44.4]]},
+   {type:"area",label:"Gurun & langka air",color:"#c9a54e",fill:"rgba(201,165,78,.22)",coords:[[30,38],[28,50],[19,52],[17,44],[24,38]]},
+   {type:"point",label:"Selat Hormuz (choke point minyak)",color:C.threat,coords:[26.6,56.3]}
+  ]},
+ {n:7,name:"India & Pakistan",coord:[30,78],zoom:4,tag:"Tembok Himalaya",
+  text:"Himalaya raksasa memisahkan India dari China, memaksa persaingan keduanya menyempit ke titik-titik seperti Kashmir. Sungai bersama menambah rapuh hubungan India–Pakistan.",
+  features:[
+   {type:"line",label:"Pegunungan Himalaya (tembok)",color:C.barrier,coords:[[36,74],[34,78],[31,80],[28,84],[27.5,88],[27,92],[28,95]]},
+   {type:"line",label:"Sungai Indus",color:C.water,coords:[[35,74],[32,71],[28,69],[25,68],[24,67.5]]},
+   {type:"border",label:"Garis Kontrol / LoC (Kashmir)",color:C.claim,coords:[[34.6,74],[33.7,74.3],[33,75.6]]},
+   {type:"point",label:"Kashmir (titik panas)",color:C.threat,coords:[34,76]}
+  ]},
+ {n:8,name:"Korea & Jepang",coord:[36,132],zoom:4,tag:"Terjepit kekuatan besar",
+  text:"Terjepit di antara China, Rusia, dan — lewat laut — Amerika Serikat, Semenanjung Korea menjadi medan tarik kekuatan besar. Jepang yang miskin sumber daya sangat bergantung pada jalur laut.",
+  features:[
+   {type:"border",label:"DMZ (Zona Demiliterisasi Korea)",color:C.threat,coords:[[38.3,126.6],[38,127.5],[38.4,128.4]]},
+   {type:"arrow",label:"Jalur laut vital impor Jepang",color:C.water,coords:[[2,105],[33,132]]},
+   {type:"line",label:"Rantai pulau pertama",color:C.barrier,coords:[[35,140],[31,131],[24,122]]}
+  ]},
+ {n:9,name:"Amerika Latin",coord:[-14,-62],zoom:3,tag:"Pedalaman terisolasi",
+  text:"Pedalaman yang sulit ditembus, hutan Amazon, dan Pegunungan Andes yang tinggi mengisolasi kawasan — menyulitkan integrasi, transportasi, dan pembangunan ekonomi.",
+  features:[
+   {type:"line",label:"Pegunungan Andes",color:C.barrier,coords:[[9,-73],[0,-78],[-16,-70],[-33,-70],[-45,-73]]},
+   {type:"area",label:"Cekungan Amazon (pedalaman terisolasi)",color:"#3f7d4a",fill:"rgba(63,125,74,.22)",coords:[[-1,-73],[-1,-51],[-9,-49],[-10,-72]]}
+  ]},
+ {n:10,name:"Arktik",coord:[74,40],zoom:3,tag:"Arena baru yang mencair",
+  text:"Es yang mencair membuka jalur pelayaran dan cadangan energi baru. Kawasan yang dulu beku kini menjadi arena perebutan baru antara Rusia, Amerika Serikat, dan negara-negara Arktik lainnya.",
+  features:[
+   {type:"arrow",label:"Jalur Laut Utara (pesisir Rusia)",color:C.threat,coords:[[69,33],[73,55],[76,90],[75,120],[73,150]]},
+   {type:"arrow",label:"Jalur Barat Laut (pesisir Kanada)",color:C.water,coords:[[74,-80],[72,-100],[70,-120],[68,-150]]},
+   {type:"point",label:"Cadangan energi & perebutan Arktik",color:C.brass,coords:[82,50]}
+  ]}
+];
+
+const esriAttr="Tiles &copy; Esri";
+const physical=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:13,maxNativeZoom:8,attribution:esriAttr});
+const relief=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",{maxZoom:13,attribution:esriAttr});
+const imagery=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:17,attribution:esriAttr});
+const osm=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"&copy; OpenStreetMap"});
+// transparent reference overlay: country borders + place names
+const boundaries=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:13,attribution:esriAttr});
+boundaries.setZIndex(400);
+
+const map=L.map("map",{center:[30,30],zoom:2,minZoom:2,worldCopyJump:true,layers:[physical,boundaries]});
+L.control.layers(
+  {"Fisik":physical,"Relief bayangan":relief,"Satelit":imagery,"Jalan (OSM)":osm},
+  {"Batas wilayah & nama tempat":boundaries},
+  {position:"topright"}).addTo(map);
+let switched=false;
+physical.on("tileerror",()=>{if(!switched){switched=true;map.removeLayer(physical);osm.addTo(map);}});
+
+// --- overlay rendering ---
+const overlay=L.layerGroup().addTo(map);
+
+// which countries to outline per region (ADMIN names / continent from Natural Earth)
+const hlMap={
+ 1:{countries:["Russia"]},
+ 2:{countries:["China"]},
+ 3:{countries:["United States of America"]},
+ 4:{countries:["France","Germany","Netherlands","Belgium","Spain","Portugal","Italy","Switzerland","Austria","Denmark","United Kingdom","Ireland","Luxembourg"]},
+ 5:{continent:"Africa"},
+ 6:{countries:["Saudi Arabia","Iraq","Iran","Syria","Jordan","Israel","Lebanon","Yemen","Oman","United Arab Emirates","Qatar","Kuwait","Turkey","Egypt"]},
+ 7:{countries:["India","Pakistan"]},
+ 8:{countries:["South Korea","North Korea","Japan"]},
+ 9:{continent:"South America",countries:["Mexico","Guatemala","Belize","Honduras","El Salvador","Nicaragua","Costa Rica","Panama","Cuba","Dominican Republic","Haiti"]},
+ 10:{countries:["Russia","Canada","United States of America","Norway","Greenland","Iceland","Finland","Sweden","Denmark"]}
+};
+let worldGeo=null, selectedN=null;
+fetch("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson")
+ .then(r=>r.json()).then(j=>{worldGeo=j; if(selectedN)drawOverlay(regions.find(x=>x.n===selectedN));})
+ .catch(()=>{});
+
+function drawHighlight(n){
+  if(!worldGeo)return;
+  const cfg=hlMap[n]; if(!cfg)return;
+  const set=new Set(cfg.countries||[]);
+  const feats=worldGeo.features.filter(f=>{
+    const p=f.properties;
+    return set.has(p.ADMIN)||set.has(p.NAME)||set.has(p.SOVEREIGNT)||(cfg.continent&&p.CONTINENT===cfg.continent);
+  });
+  if(!feats.length)return;
+  L.geoJSON({type:"FeatureCollection",features:feats},
+    {style:{color:"#c08a3e",weight:3,fillColor:"#c08a3e",fillOpacity:.12,opacity:.95}}).addTo(overlay);
+}
+
+function toRad(d){return d*Math.PI/180;} function toDeg(r){return r*180/Math.PI;}
+function bearing(a,b){const dLon=toRad(b[1]-a[1]);const y=Math.sin(dLon)*Math.cos(toRad(b[0]));
+  const x=Math.cos(toRad(a[0]))*Math.sin(toRad(b[0]))-Math.sin(toRad(a[0]))*Math.cos(toRad(b[0]))*Math.cos(dLon);
+  return (toDeg(Math.atan2(y,x))+360)%360;}
+function lbl(layer,text){layer.bindTooltip(text,{className:"flabel",sticky:true,direction:"top"});}
+
+function drawFeature(f){
+  if(f.type==="area"){
+    lbl(L.polygon(f.coords,{color:f.color,weight:2,fillColor:f.color,fillOpacity:.18,opacity:.85}).addTo(overlay),f.label);
+  } else if(f.type==="line"){
+    lbl(L.polyline(f.coords,{color:f.color,weight:4,opacity:.9}).addTo(overlay),f.label);
+  } else if(f.type==="border"){
+    lbl(L.polyline(f.coords,{color:f.color,weight:3,opacity:.95,dashArray:"9,7"}).addTo(overlay),f.label);
+  } else if(f.type==="claim"){
+    const loop=f.coords.concat([f.coords[0]]);
+    lbl(L.polyline(loop,{color:f.color,weight:3,opacity:.95,dashArray:"3,8"}).addTo(overlay),f.label);
+  } else if(f.type==="arrow"){
+    lbl(L.polyline(f.coords,{color:f.color,weight:4,opacity:.9}).addTo(overlay),f.label);
+    const a=f.coords[f.coords.length-2],b=f.coords[f.coords.length-1];
+    const icon=L.divIcon({className:"",html:`<div class="ah" style="--c:${f.color};transform:rotate(${bearing(a,b)}deg)"></div>`,iconSize:[16,16],iconAnchor:[8,8]});
+    L.marker(b,{icon}).addTo(overlay);
+  } else if(f.type==="point"){
+    const cm=L.circleMarker(f.coords,{radius:7,color:"#132430",weight:2,fillColor:f.color,fillOpacity:.95}).addTo(overlay);
+    cm.bindTooltip(f.label,{className:"flabel",direction:"top",permanent:false});
+  }
+}
+function drawOverlay(r){
+  overlay.clearLayers();
+  selectedN=r.n;
+  drawHighlight(r.n);
+  r.features.forEach(drawFeature);
+  buildLegend(r);
+}
+function buildLegend(r){
+  const box=document.getElementById("legend");
+  document.getElementById("leg-title").textContent="Legenda — "+r.name;
+  const seen=new Set(); let html="";
+  if(hlMap[r.n]) html+=`<div class="leg-row"><span class="swatch" style="background:#c08a3e;opacity:.4;border:2px solid #c08a3e"></span><span>Batas negara kawasan ini (disorot)</span></div>`;
+  r.features.forEach(f=>{
+    const key=f.type+"|"+f.label; if(seen.has(key))return; seen.add(key);
+    let sw="";
+    if(f.type==="area")sw=`<span class="swatch" style="background:${f.color};opacity:.35"></span>`;
+    else if(f.type==="line")sw=`<span class="swatch line" style="border-color:${f.color}"></span>`;
+    else if(f.type==="border")sw=`<span class="swatch dash" style="border-color:${f.color}"></span>`;
+    else if(f.type==="claim")sw=`<span class="swatch dash" style="border-color:${f.color}"></span>`;
+    else if(f.type==="arrow")sw=`<span class="swatch line" style="border-color:${f.color}"></span>`;
+    else sw=`<span class="swatch pt" style="background:${f.color};border:2px solid #132430"></span>`;
+    html+=`<div class="leg-row">${sw}<span>${f.label}</span></div>`;
+  });
+  document.getElementById("leg-body").innerHTML=html;
+  box.style.display="block";
+}
+
+// --- markers ---
+const markers={};
+function makeIcon(n,active){return L.divIcon({className:"",html:`<div class="pin${active?' active':''}"><span>${n}</span></div>`,iconSize:[30,30],iconAnchor:[15,28],popupAnchor:[0,-28]});}
+regions.forEach(r=>{
+  const m=L.marker(r.coord,{icon:makeIcon(r.n,false)}).addTo(map);
+  m.bindPopup(`<div class="pop"><div class="pop-eyebrow">Kawasan ${r.n} dari 10</div><h3>${r.name}</h3><p>${r.text}</p><span class="tag">${r.tag}</span></div>`);
+  m.on("popupopen",()=>select(r.n));
+  markers[r.n]=m;
+});
+
+// --- list ---
+const listEl=document.getElementById("list");
+regions.forEach(r=>{
+  const el=document.createElement("div");el.className="region";el.dataset.n=r.n;
+  el.innerHTML=`<div class="num">${r.n}</div><div class="r-body"><h3>${r.name}</h3><p>${r.tag}</p></div>`;
+  el.addEventListener("click",()=>goTo(r.n));listEl.appendChild(el);
+});
+
+function select(n){
+  const r=regions.find(x=>x.n===n);
+  document.querySelectorAll(".region").forEach(e=>e.classList.toggle("active",+e.dataset.n===n));
+  regions.forEach(x=>markers[x.n].setIcon(makeIcon(x.n,x.n===n)));
+  drawOverlay(r);
+  const active=document.querySelector(`.region[data-n="${n}"]`);
+  if(active)active.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+function goTo(n){
+  const r=regions.find(x=>x.n===n);
+  select(n);
+  map.flyTo(r.coord,r.zoom,{duration:1.1});
+  setTimeout(()=>markers[n].openPopup(),700);
+  if(window.innerWidth<=760)setCollapsed(true);
+}
+// --- left panel collapse (all screen sizes) ---
+const appEl=document.getElementById("app");
+function setCollapsed(c){appEl.classList.toggle("panel-collapsed",c);}
+if(window.innerWidth<=760)setCollapsed(true);
+document.getElementById("panelCollapse").addEventListener("click",()=>setCollapsed(true));
+document.getElementById("toggle").addEventListener("click",()=>setCollapsed(false));
+
+// --- toolbox collapse ---
+document.getElementById("tbToggle").addEventListener("click",function(){
+  const body=document.getElementById("tbBody");
+  const hidden=body.classList.toggle("hidden");
+  this.textContent=hidden?"+":"–";
+  this.title=hidden?"Tampilkan alat":"Sembunyikan alat";
+});
+
+// --- location search (Nominatim / OpenStreetMap) ---
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));}
+let searchMarker=null;
+const qEl=document.getElementById("q"), resBox=document.getElementById("results");
+async function doSearch(){
+  const q=qEl.value.trim();
+  if(!q){resBox.classList.remove("show");return;}
+  resBox.innerHTML='<div class="res msg">Mencari…</div>';resBox.classList.add("show");
+  try{
+    const url="https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q="+encodeURIComponent(q);
+    const data=await (await fetch(url,{headers:{"Accept":"application/json"}})).json();
+    if(!data.length){resBox.innerHTML='<div class="res msg">Lokasi tidak ditemukan.</div>';return;}
+    resBox.innerHTML="";
+    data.forEach(d=>{
+      const el=document.createElement("div");el.className="res";el.textContent=d.display_name;
+      el.addEventListener("click",()=>goToResult(d));
+      resBox.appendChild(el);
+    });
+  }catch(e){
+    resBox.innerHTML='<div class="res msg">Pencarian gagal — jaringan mungkin memblokir layanan geocoding. Coba lagi.</div>';
+  }
+}
+// fetch a short description from Wikipedia (try Indonesian, then English)
+async function wikiInfo(title){
+  for(const lang of ["id","en"]){
+    try{
+      const r=await fetch("https://"+lang+".wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(title));
+      if(!r.ok)continue;
+      const j=await r.json();
+      if(j.type==="disambiguation")continue;
+      if(j.extract){
+        const cu=j.content_urls||{};
+        const url=(cu.mobile&&cu.mobile.page)||(cu.desktop&&cu.desktop.page)||null;
+        return {extract:j.extract, url:url};
+      }
+    }catch(e){}
+  }
+  return null;
+}
+// fetch several photos from open image sources (Openverse + Wikimedia Commons)
+async function fetchPhotos(query){
+  const out=[], seen=new Set();
+  const add=(thumb,full)=>{if(thumb&&!seen.has(thumb)){seen.add(thumb);out.push({thumb,full:full||thumb});}};
+  try{
+    const r=await fetch("https://api.openverse.org/v1/images/?q="+encodeURIComponent(query)+"&page_size=10&mature=false");
+    if(r.ok){const j=await r.json();(j.results||[]).forEach(it=>add(it.thumbnail||it.url,it.url));}
+  }catch(e){}
+  try{
+    const r=await fetch("https://commons.wikimedia.org/w/api.php?format=json&origin=*&action=query&generator=search&gsrnamespace=6&gsrsearch="+encodeURIComponent(query)+"&gsrlimit=10&prop=imageinfo&iiprop=url&iiurlwidth=400");
+    if(r.ok){const j=await r.json();const pages=j.query&&j.query.pages?Object.values(j.query.pages):[];
+      pages.forEach(p=>{const ii=p.imageinfo&&p.imageinfo[0];
+        if(ii&&ii.thumburl&&/\.(jpe?g|png)$/i.test(ii.url||"")) add(ii.thumburl,ii.url);});}
+  }catch(e){}
+  return out.slice(0,6);
+}
+function galleryHTML(photos,loading){
+  if(photos&&photos.length){
+    return '<div class="gal">'+photos.map(p=>
+      '<a class="gitem" href="'+esc(p.full)+'" target="_blank" rel="noopener">'+
+      '<img loading="lazy" referrerpolicy="no-referrer" src="'+esc(p.thumb)+'" '+
+      'onerror="this.closest(\'.gitem\').remove()"></a>').join("")+'</div>';
+  }
+  if(loading) return '<div class="galmsg">Memuat foto…</div>';
+  return '<div class="galmsg">Foto tidak ditemukan untuk lokasi ini.</div>';
+}
+function popupHTML(short,full,info,photos,loading){
+  let ex="";
+  if(info&&info.extract){
+    ex='<div class="pex">'+esc(info.extract)+'</div>';
+    if(info.url) ex+='<a class="pmore" href="'+esc(info.url)+'" target="_blank" rel="noopener">Baca selengkapnya di Wikipedia →</a>';
+  }
+  return '<div class="pop">'+galleryHTML(photos,loading)+
+         '<div class="pop-eyebrow">Hasil pencarian</div><h3>'+esc(short)+'</h3>'+
+         '<p style="font-size:11px;color:#6b6250">'+esc(full)+'</p>'+ex+'</div>';
+}
+async function goToResult(d){
+  const lat=+d.lat, lon=+d.lon;
+  if(searchMarker)map.removeLayer(searchMarker);
+  const icon=L.divIcon({className:"",html:'<div class="spin"></div>',iconSize:[28,28],iconAnchor:[14,26],popupAnchor:[0,-24]});
+  searchMarker=L.marker([lat,lon],{icon}).addTo(map);
+  const parts=d.display_name.split(","), short=parts[0].trim();
+  const country=parts.length>1?parts[parts.length-1].trim():"";
+  const full=d.display_name, query=(short+" "+country).trim();
+  searchMarker.bindPopup(popupHTML(short,full,null,null,true),{maxWidth:300}).openPopup();
+  map.flyTo([lat,lon],9,{duration:1.1});
+  resBox.classList.remove("show");
+  if(window.innerWidth<=760)setCollapsed(true);
+  const [info,photos]=await Promise.all([wikiInfo(short),fetchPhotos(query)]);
+  if(searchMarker)searchMarker.setPopupContent(popupHTML(short,full,info,photos,false));
+}
+document.getElementById("qbtn").addEventListener("click",doSearch);
+qEl.addEventListener("keydown",e=>{if(e.key==="Enter")doSearch();});
+document.getElementById("clear").addEventListener("click",()=>{
+  qEl.value="";resBox.classList.remove("show");resBox.innerHTML="";
+  if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}
+  qEl.focus();
+});
+
+// --- distance measurement (km) ---
+let measuring=false, mPts=[];
+const mLayer=L.layerGroup().addTo(map);
+function fmtDist(m){return m>=1000 ? (m/1000).toFixed(m<100000?2:0)+" km" : Math.round(m)+" m";}
+function totalDist(){let t=0;for(let i=1;i<mPts.length;i++)t+=mPts[i-1].distanceTo(mPts[i]);return t;}
+function redrawMeasure(){
+  mLayer.clearLayers();
+  let last=null;
+  mPts.forEach(p=>{last=L.circleMarker(p,{radius:5,color:"#b5432e",weight:2,fillColor:"#fff",fillOpacity:1}).addTo(mLayer);});
+  if(mPts.length>1)L.polyline(mPts,{color:"#b5432e",weight:3,dashArray:"6,6"}).addTo(mLayer);
+  const t=totalDist();
+  if(mPts.length>=2&&last)last.bindTooltip("Total: "+fmtDist(t),{permanent:true,direction:"top",className:"flabel"}).openTooltip();
+  const out=document.getElementById("mOut");
+  if(mPts.length===0) out.innerHTML = measuring?"Klik titik pertama di peta…":"";
+  else if(mPts.length===1) out.innerHTML = "Klik titik berikutnya…";
+  else out.innerHTML = "Jarak total: <b>"+fmtDist(t)+"</b>";
+}
+function toggleMeasure(){
+  measuring=!measuring;
+  const b=document.getElementById("mBtn");
+  b.classList.toggle("on",measuring);
+  b.textContent=measuring?"■ Selesai":"Mulai ukur";
+  map.getContainer().classList.toggle("map-measuring",measuring);
+  redrawMeasure();
+}
+function clearMeasure(){mPts=[];redrawMeasure();}
+map.on("click",e=>{if(measuring){mPts.push(e.latlng);redrawMeasure();}});
+document.getElementById("mBtn").addEventListener("click",toggleMeasure);
+document.getElementById("mClear").addEventListener("click",clearMeasure);
+
+// --- translate / dictionary ---
+function setTr(html){document.getElementById("trOut").innerHTML=html;}
+async function translateId(){
+  const t=document.getElementById("trIn").value.trim();
+  if(!t){setTr("Ketik teks Inggris dulu.");return;}
+  setTr("Menerjemahkan…");
+  try{
+    const r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(t)+"&langpair=en|id");
+    const j=await r.json();
+    const out=j.responseData&&j.responseData.translatedText;
+    setTr(out?("<b>Indonesia:</b> "+esc(out)):"Gagal menerjemahkan.");
+  }catch(e){setTr("Gagal — jaringan memblokir layanan terjemahan.");}
+}
+async function defineEn(){
+  const t=document.getElementById("trIn").value.trim();
+  if(!t){setTr("Ketik kata Inggris dulu.");return;}
+  const word=t.split(/\s+/)[0];
+  setTr("Mencari definisi…");
+  try{
+    const r=await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(word));
+    if(!r.ok){setTr('Definisi tidak ditemukan untuk "'+esc(word)+'".');return;}
+    const j=await r.json(); const entry=j[0];
+    let html="<b>"+esc(entry.word)+"</b>";
+    const ph=entry.phonetic||(entry.phonetics||[]).map(p=>p.text).filter(Boolean)[0];
+    if(ph)html+=' <span style="color:#6b6250">'+esc(ph)+"</span>";
+    (entry.meanings||[]).slice(0,3).forEach(m=>{
+      html+='<div style="margin-top:5px"><i>'+esc(m.partOfSpeech)+"</i><ul>";
+      (m.definitions||[]).slice(0,2).forEach(d=>{html+="<li>"+esc(d.definition)+"</li>";});
+      html+="</ul></div>";
+    });
+    setTr(html);
+  }catch(e){setTr("Gagal — jaringan memblokir kamus.");}
+}
+document.getElementById("trId").addEventListener("click",translateId);
+document.getElementById("trEn").addEventListener("click",defineEn);
+</script>
+</body>
+</html>
