@@ -33,12 +33,22 @@
   .p-head .sub{margin-top:7px;font-size:12.5px;color:#5a5140;font-style:italic;line-height:1.4;}
   .p-head .author{margin-top:9px;font-size:12px;color:var(--ink);font-weight:600;}
 
-  .booksel{display:flex;align-items:center;gap:8px;padding:10px 16px 2px;}
-  .booksel-label{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:700;}
-  #bookSel{flex:1;padding:6px 8px;border:1.5px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;font-size:12.5px;}
+  .booksel{padding:10px 16px 2px;}
+  .booksel-label{display:block;margin-bottom:7px;font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:700;}
+  .bk-list{display:flex;flex-direction:column;gap:3px;}
+  .bk-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);cursor:pointer;padding:3px 2px;border-radius:5px;}
+  .bk-item:hover{background:rgba(255,255,255,.5);}
+  .bk-item input{width:16px;height:16px;accent-color:var(--ink);cursor:pointer;flex:0 0 auto;}
+  .bk-dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);flex:0 0 11px;}
+  .bk-name{font-weight:600;}
   .grp{display:flex;align-items:center;gap:8px;font-family:Georgia,serif;font-weight:700;color:var(--ink);font-size:13px;padding:12px 12px 3px;}
   .grp-dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);flex:0 0 11px;}
   .psrc{margin-top:8px;font-size:10.5px;color:#6b6250;font-style:italic;}
+  .tl{margin:9px 0 4px;border-left:2px solid var(--tlc,var(--brass));}
+  .tl-item{display:flex;gap:9px;padding:4px 0 6px 12px;position:relative;}
+  .tl-item::before{content:"";position:absolute;left:-6px;top:8px;width:9px;height:9px;border-radius:50%;background:var(--tlc,var(--brass));border:1.5px solid var(--ink);}
+  .tl-year{flex:0 0 auto;min-width:48px;font-family:Georgia,serif;font-weight:700;font-size:12.5px;color:var(--ink);}
+  .tl-txt{font-size:12px;line-height:1.4;color:#3f3a30;}
   .leg-src{margin-top:8px;font-size:10px;color:#6b6250;font-style:italic;}
   .list{overflow-y:auto;flex:1;padding:8px 12px 16px;}
   .list::-webkit-scrollbar{width:9px;}
@@ -82,6 +92,7 @@
   .swatch{flex:0 0 22px;height:12px;border-radius:2px;}
   .swatch.line{height:0;border-top:3px solid;}
   .swatch.dash{height:0;border-top:3px dashed;}
+  .swatch.dot{height:0;border-top:3px dotted;}
   .swatch.arw{position:relative;height:0;border-top:3px solid;}
   .swatch.pt{border-radius:50%;width:12px;height:12px;flex:0 0 12px;}
 
@@ -182,7 +193,7 @@
     </div>
     <div class="booksel">
       <span class="booksel-label">Sumber</span>
-      <select id="bookSel"><option value="all">Semua sumber</option></select>
+      <div id="bookSel" class="bk-list"></div>
     </div>
     <div class="list" id="list"></div>
     <div class="p-foot">
@@ -235,7 +246,10 @@ const C={threat:"#b5432e",water:"#2f7d8f",barrier:"#8a5a2b",claim:"#a23b2c",bord
 // features per region. types: area, line, border, claim, arrow, point
 // ===== DATA (multi-buku) — tambah buku baru cukup di sini =====
 const BOOKS=[
- {id:"pog",title:"Prisoners of Geography",author:"Tim Marshall",year:2015,theme:"Geopolitik",color:"#c08a3e"}
+ {id:"pog",title:"Prisoners of Geography",author:"Tim Marshall",year:2015,theme:"Geopolitik",color:"#c08a3e"},
+ {id:"tjm",title:"The Jakarta Method",author:"Vincent Bevins",year:2020,theme:"Sejarah / Perang Dingin",color:"#9c3d4e"},
+ {id:"hist",title:"Sejarah Dunia",author:"garis waktu ringkas",year:2026,theme:"Sejarah",color:"#3a6b8c"},
+ {id:"trade",title:"Komoditas & Jalur Perdagangan",author:"jalur utama (skematis)",year:2026,theme:"Ekonomi",color:"#7a4fa3"}
 ];
 const ENTRIES=[
  {id:"pog-1",book:"pog",name:"Rusia",coord:[57,55],zoom:3,tag:"Dataran terbuka tanpa penghalang",
@@ -326,12 +340,611 @@ const ENTRIES=[
    {type:"arrow",label:"Jalur Laut Utara (pesisir Rusia)",color:C.threat,coords:[[69,33],[73,55],[76,90],[75,120],[73,150]]},
    {type:"arrow",label:"Jalur Barat Laut (pesisir Kanada)",color:C.water,coords:[[74,-80],[72,-100],[70,-120],[68,-150]]},
    {type:"point",label:"Cadangan energi & perebutan Arktik",color:C.brass,coords:[82,50]}
+  ]},
+ {id:"pog-11",book:"pog",name:"Jalur Transportasi",coord:[35,45],zoom:2,tag:"Kanal, selat & rute strategis",
+  text:"Tema kunci buku: geografi menyalurkan pergerakan dunia lewat sedikit kanal, selat, dan rute strategis. Menguasai titik-titik sempit (choke point) ini berarti menguasai perdagangan dan gerak militer. Rusia menyatukan wilayahnya yang luas lewat Kereta Trans-Siberia, dan mencairnya es Arktik membuka Jalur Laut Utara.",
+  features:[
+   {type:"line",label:"Kereta Trans-Siberia (Moskow–Vladivostok)",color:"#555555",coords:[[55.75,37.6],[56,55],[56,73],[55,92],[52,104],[51,113],[48,120],[43.1,131.9]]},
+   {type:"route",label:"Jalur Laut Utara (Arktik)",color:"#2f7d8f",coords:[[69,33],[74,60],[76,95],[74,130],[68,170]]},
+   {type:"point",label:"Terusan Suez",color:"#b5432e",coords:[30,32.5]},
+   {type:"point",label:"Terusan Panama",color:"#b5432e",coords:[9.1,-79.7]},
+   {type:"point",label:"Selat Malaka",color:"#b5432e",coords:[2.5,101]},
+   {type:"point",label:"Selat Hormuz",color:"#b5432e",coords:[26.6,56.3]},
+   {type:"point",label:"Bab-el-Mandeb",color:"#b5432e",coords:[12.6,43.4]},
+   {type:"point",label:"Selat Bosphorus",color:"#b5432e",coords:[41,29]},
+   {type:"point",label:"Selat Gibraltar",color:"#b5432e",coords:[35.95,-5.6]}
+  ]},
+ {id:"tjm-1",book:"tjm",name:"Indonesia",coord:[-6.2,106.85],zoom:4,tag:"Pembantaian 1965–66 (inti buku)",
+  highlight:{countries:["Indonesia"]},
+  text:"Peristiwa inti buku. Pada 1965–66, militer Indonesia — dengan dukungan pemerintah AS — membunuh sekitar satu juta orang yang dituduh komunis atau kiri, dan memusnahkan PKI (partai komunis terbesar di luar Tiongkok dan Uni Soviet). Menurut Bevins, pola pembantaian ini menjadi model yang kemudian ditiru di banyak negara lain.",
+  features:[{type:"point",label:"Jakarta — pusat pembantaian 1965–66",color:"#9c3d4e",coords:[-6.2,106.85]}]},
+ {id:"tjm-2",book:"tjm",name:"Brasil",coord:[-15.8,-47.9],zoom:4,tag:"Kudeta 1964 & \"Operação Jacarta\"",
+  highlight:{countries:["Brazil"]},
+  text:"Kudeta militer 1964 yang didukung AS menjatuhkan pemerintahan sipil dan membuka rezim otoriter. Belakangan, kelompok sayap kanan memakai istilah \"Operação Jacarta\" sebagai ancaman pembantaian bergaya Indonesia terhadap kaum kiri.",
+  features:[{type:"point",label:"Brasil — kudeta 1964",color:"#9c3d4e",coords:[-15.8,-47.9]}]},
+ {id:"tjm-3",book:"tjm",name:"Chile",coord:[-33.45,-70.66],zoom:4,tag:"Kudeta 1973 & Operasi Condor",
+  highlight:{countries:["Chile"]},
+  text:"Kudeta 11 September 1973 menggulingkan Presiden Salvador Allende dan membawa Jenderal Augusto Pinochet berkuasa. Menjelang kudeta, muncul grafiti bertuliskan \"Yakarta\" sebagai ancaman — merujuk langsung pada pembantaian Indonesia. Represi berlanjut lewat jaringan lintas negara \"Operasi Condor\".",
+  features:[{type:"point",label:"Santiago — kudeta 1973",color:"#9c3d4e",coords:[-33.45,-70.66]}]},
+ {id:"tjm-4",book:"tjm",name:"Guatemala",coord:[14.63,-90.51],zoom:5,tag:"Kudeta CIA 1954",
+  highlight:{countries:["Guatemala"]},
+  text:"Kudeta yang dirancang CIA pada 1954 menjatuhkan Presiden terpilih Jacobo Árbenz — salah satu uji awal intervensi antikomunis AS yang membuka dekade panjang kekerasan dan pembunuhan politik.",
+  features:[{type:"point",label:"Guatemala City — kudeta 1954",color:"#9c3d4e",coords:[14.63,-90.51]}]},
+ {id:"tjm-5",book:"tjm",name:"Argentina",coord:[-34.6,-58.38],zoom:4,tag:"Perang Kotor & Operasi Condor",
+  highlight:{countries:["Argentina"]},
+  text:"Termasuk jaringan represi yang didokumentasikan buku: \"Perang Kotor\" dan penghilangan paksa ribuan orang, terhubung dengan Operasi Condor — koordinasi lintas negara di Amerika Selatan untuk memburu lawan kiri.",
+  features:[{type:"point",label:"Buenos Aires — Perang Kotor",color:"#9c3d4e",coords:[-34.6,-58.38]}]},
+ {id:"tjm-6",book:"tjm",name:"Timor Timur",coord:[-8.56,125.56],zoom:6,tag:"Invasi & pendudukan 1975",
+  highlight:{countries:["East Timor","Timor-Leste"]},
+  text:"Termasuk dalam daftar negara yang disorot buku: invasi dan pendudukan oleh Indonesia sejak 1975 — yang berlangsung dengan restu diam-diam sejumlah sekutu Barat — menimbulkan korban jiwa dalam jumlah besar.",
+  features:[{type:"point",label:"Dili — invasi 1975",color:"#9c3d4e",coords:[-8.56,125.56]}]},
+ {id:"tjm-7",book:"tjm",name:"Irak",coord:[33.31,44.36],zoom:5,tag:"Kudeta Ba'ath 1963",
+  highlight:{countries:["Iraq"]},
+  text:"Kudeta Ba'ath 1963 menggulingkan PM Abdul Karim Qasim dan disusul pembunuhan massal anggota Partai Komunis Irak. Menurut catatan yang dikutip buku, badan intelijen AS turut menyediakan daftar nama yang kemudian menjadi sasaran.",
+  features:[{type:"point",label:"Baghdad — kudeta 1963",color:"#9c3d4e",coords:[33.31,44.36]}]},
+ {id:"tjm-8",book:"tjm",name:"Vietnam",coord:[10.82,106.63],zoom:5,tag:"Program Phoenix",
+  highlight:{countries:["Vietnam"]},
+  text:"Program Phoenix yang dijalankan AS menargetkan jaringan kader komunis (Viet Cong) di Vietnam Selatan melalui penangkapan, interogasi, dan pembunuhan terarah.",
+  features:[{type:"point",label:"Saigon — Program Phoenix",color:"#9c3d4e",coords:[10.82,106.63]}]},
+ {id:"tjm-9",book:"tjm",name:"Filipina",coord:[14.6,120.98],zoom:5,tag:"Anti-Huk & Marcos",
+  highlight:{countries:["Philippines"]},
+  text:"Kampanye menumpas pemberontakan Huk pada 1950-an (dengan peran penasihat CIA), lalu represi luas terhadap kaum kiri di bawah darurat militer Marcos.",
+  features:[{type:"point",label:"Manila — kampanye anti-Huk",color:"#9c3d4e",coords:[14.6,120.98]}]},
+ {id:"tjm-10",book:"tjm",name:"Korea Selatan",coord:[37.57,126.98],zoom:5,tag:"Pembantaian Liga Bodo 1950",
+  highlight:{countries:["South Korea"]},
+  text:"Pembantaian Liga Bodo pada 1950 menewaskan puluhan hingga ratusan ribu orang yang dicurigai komunis pada awal Perang Korea.",
+  features:[{type:"point",label:"Seoul — Liga Bodo 1950",color:"#9c3d4e",coords:[37.57,126.98]}]},
+ {id:"tjm-11",book:"tjm",name:"Taiwan",coord:[25.03,121.56],zoom:5,tag:"Teror Putih (KMT)",
+  highlight:{countries:["Taiwan"]},
+  text:"Masa 'Teror Putih' di bawah darurat militer KMT sejak akhir 1940-an: penahanan dan eksekusi para tertuduh komunis dan pembangkang selama puluhan tahun.",
+  features:[{type:"point",label:"Taipei — Teror Putih",color:"#9c3d4e",coords:[25.03,121.56]}]},
+ {id:"tjm-12",book:"tjm",name:"Thailand",coord:[13.75,100.5],zoom:5,tag:"Pembantaian Thammasat 1976",
+  highlight:{countries:["Thailand"]},
+  text:"Kekerasan antikomunis memuncak dalam pembantaian Universitas Thammasat pada 6 Oktober 1976 terhadap mahasiswa berhaluan kiri.",
+  features:[{type:"point",label:"Bangkok — Thammasat 1976",color:"#9c3d4e",coords:[13.75,100.5]}]},
+ {id:"tjm-13",book:"tjm",name:"Sudan",coord:[15.5,32.56],zoom:5,tag:"Penumpasan Partai Komunis 1971",
+  highlight:{countries:["Sudan"]},
+  text:"Setelah kudeta gagal yang dikaitkan dengan kaum kiri pada 1971, pemerintah mengeksekusi para pemimpin Partai Komunis Sudan — dulu salah satu yang terbesar di dunia Arab dan Afrika.",
+  features:[{type:"point",label:"Khartoum — penumpasan 1971",color:"#9c3d4e",coords:[15.5,32.56]}]},
+ {id:"tjm-14",book:"tjm",name:"Meksiko",coord:[19.43,-99.13],zoom:5,tag:"Perang Kotor & Tlatelolco 1968",
+  highlight:{countries:["Mexico"]},
+  text:"'Perang Kotor' pada 1960-an–1980-an menargetkan gerakan kiri dan pembangkang, termasuk pembantaian mahasiswa di Tlatelolco pada 1968.",
+  features:[{type:"point",label:"Mexico City — Tlatelolco 1968",color:"#9c3d4e",coords:[19.43,-99.13]}]},
+ {id:"tjm-15",book:"tjm",name:"Nikaragua",coord:[12.13,-86.25],zoom:6,tag:"Somoza & Contra",
+  highlight:{countries:["Nicaragua"]},
+  text:"Kediktatoran Somoza yang didukung AS, lalu pada 1980-an perang kelompok 'Contra' yang didanai AS melawan pemerintah Sandinista.",
+  features:[{type:"point",label:"Managua — Somoza & Contra",color:"#9c3d4e",coords:[12.13,-86.25]}]},
+ {id:"tjm-16",book:"tjm",name:"Honduras",coord:[14.1,-87.2],zoom:6,tag:"Batalion 3-16 (regu maut)",
+  highlight:{countries:["Honduras"]},
+  text:"Menjadi basis operasi 'Contra' pada 1980-an; regu maut Batalion 3-16 yang dilatih AS menculik dan membunuh para tertuduh kiri.",
+  features:[{type:"point",label:"Tegucigalpa — Batalion 3-16",color:"#9c3d4e",coords:[14.1,-87.2]}]},
+ {id:"tjm-17",book:"tjm",name:"El Salvador",coord:[13.69,-89.19],zoom:6,tag:"Regu maut & El Mozote",
+  highlight:{countries:["El Salvador"]},
+  text:"Perang saudara 1980-an: militer yang didukung AS dan regu maut melakukan pembunuhan massal, termasuk pembantaian El Mozote pada 1981.",
+  features:[{type:"point",label:"San Salvador — El Mozote 1981",color:"#9c3d4e",coords:[13.69,-89.19]}]},
+ {id:"tjm-18",book:"tjm",name:"Kolombia",coord:[4.61,-74.08],zoom:5,tag:"La Violencia & paramiliter",
+  highlight:{countries:["Colombia"]},
+  text:"Periode 'La Violencia' dan konflik berkepanjangan diwarnai kekerasan antikomunis serta kelompok paramiliter yang memburu kaum kiri.",
+  features:[{type:"point",label:"Bogotá — La Violencia",color:"#9c3d4e",coords:[4.61,-74.08]}]},
+ {id:"tjm-19",book:"tjm",name:"Venezuela",coord:[10.49,-66.9],zoom:5,tag:"Kontra-pemberontakan 1960-an",
+  highlight:{countries:["Venezuela"]},
+  text:"Kontra-pemberontakan pada 1960-an menumpas gerilyawan berhaluan kiri dengan dukungan AS.",
+  features:[{type:"point",label:"Caracas — kontra-pemberontakan",color:"#9c3d4e",coords:[10.49,-66.9]}]},
+ {id:"tjm-20",book:"tjm",name:"Bolivia",coord:[-16.5,-68.15],zoom:5,tag:"1967 & Operasi Condor",
+  highlight:{countries:["Bolivia"]},
+  text:"Che Guevara terbunuh di sini pada 1967 (operasi tentara Bolivia dengan bantuan CIA); rezim Banzer sejak 1971 turut bergabung dalam Operasi Condor.",
+  features:[{type:"point",label:"La Paz — 1967 & Condor",color:"#9c3d4e",coords:[-16.5,-68.15]}]},
+ {id:"tjm-21",book:"tjm",name:"Paraguay",coord:[-25.28,-57.63],zoom:5,tag:"Stroessner & Operasi Condor",
+  highlight:{countries:["Paraguay"]},
+  text:"Kediktatoran Stroessner (1954–1989) menjadi salah satu tiang Operasi Condor; 'Arsip Teror' kelak mengungkap represi lintas negara.",
+  features:[{type:"point",label:"Asunción — Operasi Condor",color:"#9c3d4e",coords:[-25.28,-57.63]}]},
+ {id:"tjm-22",book:"tjm",name:"Uruguay",coord:[-34.9,-56.16],zoom:5,tag:"Kudeta 1973 & Condor",
+  highlight:{countries:["Uruguay"]},
+  text:"Kudeta 1973 membuka kediktatoran militer yang menjadi bagian Operasi Condor, dengan penahanan dan penyiksaan tahanan politik secara luas.",
+  features:[{type:"point",label:"Montevideo — kudeta 1973",color:"#9c3d4e",coords:[-34.9,-56.16]}]},
+ {id:"hist-1",book:"hist",name:"Rusia",coord:[55.75,37.62],zoom:4,tag:"Tsar → USSR → Federasi Rusia",
+  highlight:{countries:["Russia"]},
+  timeline:[
+   {year:1547,event:"Ivan IV (\"yang Mengerikan\") menjadi Tsar pertama Rusia."},
+   {year:1917,event:"Revolusi menggulingkan Tsar Nikolai II; kaum Bolshevik pimpinan Lenin berkuasa, ideologi komunis."},
+   {year:1922,event:"Uni Soviet (USSR) dibentuk."},
+   {year:"1924–1953",event:"Era Josef Stalin: industrialisasi paksa dan represi massal."},
+   {year:1991,event:"USSR bubar; Rusia merdeka, Boris Yeltsin presiden pertama."},
+   {year:2000,event:"Vladimir Putin mulai berkuasa."}
+  ]},
+ {id:"hist-2",book:"hist",name:"Amerika Serikat",coord:[38.9,-77.03],zoom:4,tag:"Merdeka → adikuasa",
+  highlight:{countries:["United States of America"]},
+  timeline:[
+   {year:1776,event:"Deklarasi Kemerdekaan dari Kerajaan Inggris."},
+   {year:1787,event:"Konstitusi AS disahkan; republik federal."},
+   {year:"1861–1865",event:"Perang Saudara; perbudakan dihapuskan."},
+   {year:1945,event:"Muncul sebagai adikuasa pasca-Perang Dunia II."},
+   {year:1991,event:"Menjadi satu-satunya adikuasa usai Perang Dingin."}
+  ]},
+ {id:"hist-3",book:"hist",name:"China",coord:[39.9,116.4],zoom:4,tag:"Kekaisaran → RRT",
+  highlight:{countries:["China"]},
+  timeline:[
+   {year:"221 SM",event:"Penyatuan pertama di bawah Dinasti Qin."},
+   {year:1912,event:"Dinasti terakhir (Qing) tumbang; Republik Tiongkok berdiri."},
+   {year:1949,event:"Republik Rakyat Tiongkok diproklamasikan Mao Zedong (komunis)."},
+   {year:1978,event:"Deng Xiaoping memulai reformasi dan keterbukaan ekonomi."},
+   {year:1989,event:"Protes dan penumpasan di Lapangan Tiananmen."}
+  ]},
+ {id:"hist-4",book:"hist",name:"Britania Raya",coord:[51.5,-0.12],zoom:4,tag:"Imperium → Brexit",
+  highlight:{countries:["United Kingdom"]},
+  timeline:[
+   {year:1215,event:"Magna Carta membatasi kekuasaan raja."},
+   {year:1707,event:"Penyatuan Inggris & Skotlandia menjadi Britania Raya."},
+   {year:"1801–1922",event:"Puncak Imperium Britania, terluas dalam sejarah."},
+   {year:1945,event:"Kemunduran imperium pasca-PD II; gelombang dekolonisasi."},
+   {year:2020,event:"Keluar dari Uni Eropa (Brexit)."}
+  ]},
+ {id:"hist-5",book:"hist",name:"Prancis",coord:[48.85,2.35],zoom:5,tag:"Revolusi → Republik Kelima",
+  highlight:{countries:["France"]},
+  timeline:[
+   {year:1789,event:"Revolusi Prancis menggulingkan monarki absolut."},
+   {year:1804,event:"Napoleon Bonaparte menjadi Kaisar."},
+   {year:1871,event:"Republik Ketiga berdiri setelah kalah dari Prusia."},
+   {year:1958,event:"Republik Kelima; Charles de Gaulle."}
+  ]},
+ {id:"hist-6",book:"hist",name:"Jerman",coord:[52.52,13.4],zoom:5,tag:"Penyatuan → Nazi → Reunifikasi",
+  highlight:{countries:["Germany"]},
+  timeline:[
+   {year:1871,event:"Penyatuan Jerman oleh Otto von Bismarck; Kekaisaran Jerman."},
+   {year:1933,event:"Adolf Hitler dan Nazi berkuasa."},
+   {year:1945,event:"Kalah Perang Dunia II; negara diduduki dan terbagi."},
+   {year:1949,event:"Terbentuk Jerman Barat dan Jerman Timur."},
+   {year:1990,event:"Reunifikasi Jerman."}
+  ]},
+ {id:"hist-7",book:"hist",name:"Jepang",coord:[35.68,139.76],zoom:5,tag:"Meiji → PD II → bangkit",
+  highlight:{countries:["Japan"]},
+  timeline:[
+   {year:1868,event:"Restorasi Meiji; modernisasi dan industrialisasi cepat."},
+   {year:"1941–1945",event:"Perang Pasifik; kalah Perang Dunia II."},
+   {year:1947,event:"Konstitusi damai pasca-perang."},
+   {year:"1950–60-an",event:"\"Keajaiban ekonomi\"; menjadi salah satu ekonomi terbesar dunia."}
+  ]},
+ {id:"hist-8",book:"hist",name:"India",coord:[28.61,77.21],zoom:4,tag:"Raj → merdeka → republik",
+  highlight:{countries:["India"]},
+  timeline:[
+   {year:1858,event:"Kekuasaan langsung Britania (British Raj) dimulai."},
+   {year:1947,event:"Merdeka; pemisahan India–Pakistan."},
+   {year:1950,event:"Menjadi republik; konstitusi berlaku."},
+   {year:1991,event:"Liberalisasi ekonomi besar-besaran."}
+  ]},
+ {id:"hist-9",book:"hist",name:"Indonesia",coord:[-6.2,106.8],zoom:4,tag:"VOC → merdeka → Reformasi",
+  highlight:{countries:["Indonesia"]},
+  timeline:[
+   {year:1602,event:"VOC Belanda mulai menancapkan kekuasaan dagang."},
+   {year:1945,event:"Proklamasi kemerdekaan oleh Soekarno–Hatta."},
+   {year:1949,event:"Belanda mengakui kedaulatan Indonesia."},
+   {year:"1965–66",event:"Peralihan ke Orde Baru di bawah Soeharto."},
+   {year:1998,event:"Reformasi; Soeharto lengser setelah 32 tahun."}
+  ]},
+ {id:"hist-10",book:"hist",name:"Italia",coord:[41.9,12.5],zoom:5,tag:"Penyatuan → Fasisme → republik",
+  highlight:{countries:["Italy"]},
+  timeline:[
+   {year:1861,event:"Penyatuan Italia (Risorgimento)."},
+   {year:1922,event:"Benito Mussolini dan Fasisme berkuasa."},
+   {year:1946,event:"Monarki dihapus; menjadi republik."}
+  ]},
+ {id:"hist-11",book:"hist",name:"Spanyol",coord:[40.42,-3.7],zoom:5,tag:"1492 → Franco → demokrasi",
+  highlight:{countries:["Spain"]},
+  timeline:[
+   {year:1492,event:"Reconquista selesai; era penjelajahan samudra dimulai."},
+   {year:"1936–1939",event:"Perang Saudara; Jenderal Franco berkuasa."},
+   {year:1975,event:"Franco wafat; transisi ke demokrasi & monarki konstitusional."}
+  ]},
+ {id:"hist-12",book:"hist",name:"Brasil",coord:[-15.79,-47.88],zoom:4,tag:"Merdeka → republik → militer",
+  highlight:{countries:["Brazil"]},
+  timeline:[
+   {year:1822,event:"Merdeka dari Portugal (sebagai kekaisaran)."},
+   {year:1888,event:"Perbudakan dihapuskan."},
+   {year:1889,event:"Monarki tumbang; menjadi republik."},
+   {year:"1964–1985",event:"Kediktatoran militer."}
+  ]},
+ {id:"hist-13",book:"hist",name:"Afrika Selatan",coord:[-25.75,28.19],zoom:4,tag:"Apartheid → demokrasi",
+  highlight:{countries:["South Africa"]},
+  timeline:[
+   {year:1910,event:"Uni Afrika Selatan terbentuk."},
+   {year:1948,event:"Sistem apartheid (pemisahan rasial) diberlakukan."},
+   {year:1994,event:"Apartheid berakhir; Nelson Mandela presiden pertama pasca-apartheid."}
+  ]},
+ {id:"hist-14",book:"hist",name:"Mesir",coord:[30.04,31.24],zoom:5,tag:"Merdeka → revolusi",
+  highlight:{countries:["Egypt"]},
+  timeline:[
+   {year:1922,event:"Merdeka (nominal) dari Britania."},
+   {year:1952,event:"Revolusi menggulingkan monarki; Gamal Abdel Nasser."},
+   {year:2011,event:"Revolusi menggulingkan Hosni Mubarak (Arab Spring)."}
+  ]},
+ {id:"hist-15",book:"hist",name:"Turki",coord:[39.93,32.86],zoom:5,tag:"Utsmaniyah → republik",
+  highlight:{countries:["Turkey","Turkiye"]},
+  timeline:[
+   {year:1923,event:"Republik Turki didirikan Mustafa Kemal Atatürk dari reruntuhan Utsmaniyah."},
+   {year:1938,event:"Atatürk wafat; warisan sekularisasi berlanjut."}
+  ]},
+ {id:"hist-16",book:"hist",name:"Korea Selatan",coord:[37.57,126.98],zoom:5,tag:"Merdeka → perang → demokrasi",
+  highlight:{countries:["South Korea"]},
+  timeline:[
+   {year:1945,event:"Merdeka dari Jepang; semenanjung terbagi dua."},
+   {year:"1950–1953",event:"Perang Korea."},
+   {year:1987,event:"Transisi menuju demokrasi."}
+  ]},
+ {id:"hist-17",book:"hist",name:"Vietnam",coord:[21.03,105.85],zoom:5,tag:"Merdeka → reunifikasi → Doi Moi",
+  highlight:{countries:["Vietnam"]},
+  timeline:[
+   {year:1945,event:"Ho Chi Minh memproklamasikan kemerdekaan."},
+   {year:1954,event:"Kemenangan atas Prancis (Dien Bien Phu); negara terbagi."},
+   {year:1975,event:"Reunifikasi di bawah pemerintahan komunis."},
+   {year:1986,event:"Reformasi ekonomi Doi Moi."}
+  ]},
+ {id:"hist-18",book:"hist",name:"Meksiko",coord:[19.43,-99.13],zoom:5,tag:"Penaklukan → merdeka → revolusi",
+  highlight:{countries:["Mexico"]},
+  timeline:[
+   {year:1521,event:"Penaklukan Spanyol atas Kekaisaran Aztek."},
+   {year:1821,event:"Merdeka dari Spanyol."},
+   {year:"1910–1920",event:"Revolusi Meksiko."}
+  ]},
+ {id:"hist-19",book:"hist",name:"Thailand",coord:[13.75,100.5],zoom:5,tag:"Chakri → monarki konstitusional",
+  highlight:{countries:["Thailand"]},
+  timeline:[
+   {year:1782,event:"Dinasti Chakri berdiri; Bangkok menjadi ibu kota."},
+   {year:1932,event:"Revolusi mengubah monarki absolut menjadi konstitusional."},
+   {year:1939,event:"Nama negara diganti dari Siam menjadi Thailand."},
+   {year:2014,event:"Kudeta militer (salah satu dari banyak kudeta)."}
+  ]},
+ {id:"hist-20",book:"hist",name:"Filipina",coord:[14.6,120.98],zoom:5,tag:"Spanyol → AS → merdeka",
+  highlight:{countries:["Philippines"]},
+  timeline:[
+   {year:1565,event:"Kolonisasi Spanyol dimulai."},
+   {year:1898,event:"Diserahkan ke AS usai Perang Spanyol–Amerika."},
+   {year:1946,event:"Merdeka penuh dari Amerika Serikat."},
+   {year:1986,event:"Revolusi EDSA menggulingkan Ferdinand Marcos."}
+  ]},
+ {id:"hist-21",book:"hist",name:"Malaysia",coord:[3.14,101.69],zoom:5,tag:"Britania → federasi",
+  highlight:{countries:["Malaysia"]},
+  timeline:[
+   {year:1826,event:"Permukiman Selat di bawah kekuasaan Britania."},
+   {year:1957,event:"Malaya merdeka dari Britania."},
+   {year:1963,event:"Federasi Malaysia terbentuk (bersama Sabah, Sarawak, Singapura)."},
+   {year:1965,event:"Singapura keluar dari Malaysia."}
+  ]},
+ {id:"hist-22",book:"hist",name:"Singapura",coord:[1.29,103.85],zoom:6,tag:"Pos dagang → negara kota",
+  highlight:{countries:["Singapore"]},
+  timeline:[
+   {year:1819,event:"Stamford Raffles mendirikan pos dagang Britania."},
+   {year:1959,event:"Pemerintahan sendiri; Lee Kuan Yew."},
+   {year:1963,event:"Bergabung dengan Malaysia."},
+   {year:1965,event:"Merdeka sebagai negara berdaulat."}
+  ]},
+ {id:"hist-23",book:"hist",name:"Myanmar",coord:[19.75,96.1],zoom:5,tag:"Merdeka → junta militer",
+  highlight:{countries:["Myanmar"]},
+  timeline:[
+   {year:1886,event:"Menjadi bagian British India (aneksasi penuh)."},
+   {year:1948,event:"Merdeka dari Britania."},
+   {year:1962,event:"Kudeta militer; awal kekuasaan junta yang panjang."},
+   {year:2021,event:"Kudeta menggulingkan pemerintahan Aung San Suu Kyi."}
+  ]},
+ {id:"hist-24",book:"hist",name:"Kamboja",coord:[11.56,104.92],zoom:6,tag:"Khmer Merah → monarki",
+  highlight:{countries:["Cambodia"]},
+  timeline:[
+   {year:1953,event:"Merdeka dari Prancis."},
+   {year:"1975–1979",event:"Rezim Khmer Merah (Pol Pot); genosida sekitar 1,5–2 juta jiwa."},
+   {year:1979,event:"Khmer Merah digulingkan lewat invasi Vietnam."},
+   {year:1993,event:"Monarki konstitusional dipulihkan."}
+  ]},
+ {id:"hist-25",book:"hist",name:"Laos",coord:[17.97,102.6],zoom:5,tag:"Merdeka → republik komunis",
+  highlight:{countries:["Laos"]},
+  timeline:[
+   {year:1953,event:"Merdeka dari Prancis."},
+   {year:1975,event:"Pathet Lao (komunis) berkuasa; republik didirikan."}
+  ]},
+ {id:"hist-26",book:"hist",name:"Pakistan",coord:[33.69,73.06],zoom:5,tag:"Pemisahan → kudeta berulang",
+  highlight:{countries:["Pakistan"]},
+  timeline:[
+   {year:1947,event:"Terbentuk saat pemisahan dari India (negara mayoritas Muslim)."},
+   {year:1971,event:"Pakistan Timur memisahkan diri menjadi Bangladesh."},
+   {year:"1977 & 1999",event:"Kudeta militer (Zia-ul-Haq, lalu Musharraf)."}
+  ]},
+ {id:"hist-27",book:"hist",name:"Bangladesh",coord:[23.81,90.41],zoom:6,tag:"Pakistan Timur → merdeka",
+  highlight:{countries:["Bangladesh"]},
+  timeline:[
+   {year:1947,event:"Menjadi Pakistan Timur saat pemisahan India."},
+   {year:1971,event:"Perang kemerdekaan; merdeka dari Pakistan."}
+  ]},
+ {id:"hist-28",book:"hist",name:"Sri Lanka",coord:[6.93,79.86],zoom:6,tag:"Ceylon → republik → perang",
+  highlight:{countries:["Sri Lanka"]},
+  timeline:[
+   {year:1948,event:"Merdeka dari Britania (sebagai Ceylon)."},
+   {year:1972,event:"Menjadi republik; berganti nama Sri Lanka."},
+   {year:"1983–2009",event:"Perang saudara melawan pemberontak Tamil."}
+  ]},
+ {id:"hist-29",book:"hist",name:"Afghanistan",coord:[34.53,69.17],zoom:5,tag:"Invasi berulang → Taliban",
+  highlight:{countries:["Afghanistan"]},
+  timeline:[
+   {year:1919,event:"Merdeka penuh dari pengaruh Britania."},
+   {year:1979,event:"Invasi Uni Soviet."},
+   {year:2001,event:"Invasi pimpinan AS menggulingkan Taliban."},
+   {year:2021,event:"Taliban kembali berkuasa setelah AS menarik diri."}
+  ]},
+ {id:"hist-30",book:"hist",name:"Nepal",coord:[27.7,85.32],zoom:6,tag:"Kerajaan → republik",
+  highlight:{countries:["Nepal"]},
+  timeline:[
+   {year:1768,event:"Penyatuan Nepal oleh Prithvi Narayan Shah."},
+   {year:2008,event:"Monarki dihapus; menjadi republik."}
+  ]},
+ {id:"hist-31",book:"hist",name:"Korea Utara",coord:[39.02,125.75],zoom:5,tag:"Dinasti Kim (komunis)",
+  highlight:{countries:["North Korea"]},
+  timeline:[
+   {year:1948,event:"Berdiri di bawah Kim Il-sung; ideologi komunis (kelak Juche)."},
+   {year:"1950–1953",event:"Perang Korea."},
+   {year:"1994 & 2011",event:"Suksesi dinasti Kim: Kim Jong-il lalu Kim Jong-un."}
+  ]},
+ {id:"hist-32",book:"hist",name:"Mongolia",coord:[47.92,106.92],zoom:4,tag:"Kekaisaran → komunis → demokrasi",
+  highlight:{countries:["Mongolia"]},
+  timeline:[
+   {year:1206,event:"Kekaisaran Mongol didirikan Jenghis Khan."},
+   {year:1921,event:"Merdeka dari China dengan bantuan Soviet."},
+   {year:1924,event:"Republik Rakyat Mongolia (komunis)."},
+   {year:1990,event:"Transisi damai ke demokrasi."}
+  ]},
+ {id:"hist-33",book:"hist",name:"Taiwan",coord:[25.03,121.56],zoom:6,tag:"Jepang → ROC → demokrasi",
+  highlight:{countries:["Taiwan"]},
+  timeline:[
+   {year:1895,event:"Diserahkan Dinasti Qing ke Jepang."},
+   {year:1945,event:"Kembali ke Republik Tiongkok usai PD II."},
+   {year:1949,event:"Pemerintah Republik Tiongkok (KMT) mundur ke Taiwan."},
+   {year:1996,event:"Pemilihan presiden langsung pertama; demokratisasi."}
+  ]},
+ {id:"hist-34",book:"hist",name:"Arab Saudi",coord:[24.71,46.68],zoom:5,tag:"Kerajaan → era minyak",
+  highlight:{countries:["Saudi Arabia"]},
+  timeline:[
+   {year:1932,event:"Kerajaan Arab Saudi didirikan oleh Ibn Saud."},
+   {year:1938,event:"Minyak ditemukan; mengubah ekonomi dan geopolitik."}
+  ]},
+ {id:"hist-35",book:"hist",name:"Iran",coord:[35.69,51.39],zoom:5,tag:"Pahlavi → Republik Islam",
+  highlight:{countries:["Iran"]},
+  timeline:[
+   {year:1925,event:"Dinasti Pahlavi berdiri."},
+   {year:1953,event:"Kudeta menggulingkan PM Mossadegh (dukungan AS & Inggris)."},
+   {year:1979,event:"Revolusi Islam; Republik Islam di bawah Ayatullah Khomeini."}
+  ]},
+ {id:"hist-36",book:"hist",name:"Irak",coord:[33.31,44.36],zoom:5,tag:"Monarki → Saddam → invasi",
+  highlight:{countries:["Iraq"]},
+  timeline:[
+   {year:1932,event:"Merdeka dari mandat Britania."},
+   {year:1958,event:"Monarki digulingkan; menjadi republik."},
+   {year:"1979–2003",event:"Saddam Hussein berkuasa (Partai Ba'ath)."},
+   {year:2003,event:"Invasi pimpinan AS menggulingkan Saddam."}
+  ]},
+ {id:"hist-37",book:"hist",name:"Israel",coord:[32.08,34.78],zoom:6,tag:"Berdiri 1948 → perang & perjanjian",
+  highlight:{countries:["Israel"]},
+  timeline:[
+   {year:1948,event:"Negara Israel berdiri; perang Arab–Israel pertama pecah."},
+   {year:1967,event:"Perang Enam Hari."},
+   {year:1979,event:"Perjanjian damai dengan Mesir."},
+   {year:1993,event:"Kesepakatan Oslo dengan PLO."}
+  ]},
+ {id:"hist-83",book:"hist",name:"Palestina",coord:[31.9,35.21],zoom:6,tag:"Mandat → Nakba → pengakuan PBB",
+  highlight:{countries:["Palestine"]},
+  timeline:[
+   {year:"1920–1948",event:"Wilayah di bawah Mandat Britania atas Palestina."},
+   {year:1948,event:"Nakba: ratusan ribu warga Palestina mengungsi saat berdirinya Israel dan perang yang menyertainya."},
+   {year:1964,event:"Organisasi Pembebasan Palestina (PLO) didirikan."},
+   {year:1988,event:"PLO memproklamasikan Negara Palestina."},
+   {year:1993,event:"Kesepakatan Oslo; Otoritas Palestina dibentuk."},
+   {year:2012,event:"Diterima sebagai negara pengamat non-anggota di PBB."}
+  ]},
+ {id:"hist-38",book:"hist",name:"Suriah",coord:[33.51,36.29],zoom:5,tag:"Ba'ath → Assad → tumbang 2024",
+  highlight:{countries:["Syria"]},
+  timeline:[
+   {year:1946,event:"Merdeka dari mandat Prancis."},
+   {year:1963,event:"Partai Ba'ath berkuasa."},
+   {year:1971,event:"Hafez al-Assad menjadi presiden."},
+   {year:2011,event:"Perang saudara dimulai."},
+   {year:2024,event:"Rezim Assad tumbang setelah serangan cepat kelompok oposisi."}
+  ]},
+ {id:"hist-39",book:"hist",name:"Kazakhstan",coord:[51.16,71.47],zoom:4,tag:"Soviet → merdeka",
+  highlight:{countries:["Kazakhstan"]},
+  timeline:[
+   {year:1936,event:"Menjadi republik Uni Soviet."},
+   {year:1991,event:"Merdeka saat pembubaran Uni Soviet."}
+  ]},
+ {id:"hist-40",book:"hist",name:"Belanda",coord:[52.37,4.9],zoom:6,tag:"Republik → kerajaan",
+  highlight:{countries:["Netherlands"]},
+  timeline:[{year:1648,event:"Kemerdekaan dari Spanyol diakui (Perdamaian Westphalia)."},{year:1815,event:"Kerajaan Belanda berdiri."},{year:"1945–49",event:"Dekolonisasi; kehilangan Hindia Belanda (Indonesia)."}]},
+ {id:"hist-41",book:"hist",name:"Polandia",coord:[52.23,21.01],zoom:5,tag:"Hilang → bangkit → bebas",
+  highlight:{countries:["Poland"]},
+  timeline:[{year:1795,event:"Terhapus dari peta akibat pembagian oleh negara tetangga."},{year:1918,event:"Merdeka kembali usai Perang Dunia I."},{year:1939,event:"Diinvasi Jerman & Uni Soviet; awal PD II."},{year:1989,event:"Tumbangnya komunisme (gerakan Solidaritas)."}]},
+ {id:"hist-42",book:"hist",name:"Ukraina",coord:[50.45,30.52],zoom:5,tag:"Merdeka → perang",
+  highlight:{countries:["Ukraine"]},
+  timeline:[{year:1991,event:"Merdeka dari Uni Soviet."},{year:2014,event:"Revolusi Maidan; Rusia mencaplok Krimea."},{year:2022,event:"Invasi skala penuh oleh Rusia."}]},
+ {id:"hist-43",book:"hist",name:"Yunani",coord:[37.98,23.73],zoom:5,tag:"Demokrasi kuno → modern",
+  highlight:{countries:["Greece"]},
+  timeline:[{year:"508 SM",event:"Demokrasi Athena, salah satu yang pertama di dunia."},{year:1830,event:"Merdeka dari Kesultanan Utsmaniyah."},{year:1974,event:"Kembali ke demokrasi (akhir kekuasaan junta militer)."}]},
+ {id:"hist-44",book:"hist",name:"Portugal",coord:[38.72,-9.13],zoom:5,tag:"Kerajaan → Revolusi Anyelir",
+  highlight:{countries:["Portugal"]},
+  timeline:[{year:1143,event:"Kerajaan Portugal berdiri."},{year:1910,event:"Monarki tumbang; menjadi republik."},{year:1974,event:"Revolusi Anyelir mengakhiri kediktatoran."}]},
+ {id:"hist-45",book:"hist",name:"Swedia",coord:[59.33,18.06],zoom:4,tag:"Merdeka → netralitas",
+  highlight:{countries:["Sweden"]},
+  timeline:[{year:1523,event:"Merdeka dari Uni Kalmar (Gustav Vasa)."},{year:1814,event:"Memulai era netralitas panjang."}]},
+ {id:"hist-46",book:"hist",name:"Austria",coord:[48.21,16.37],zoom:5,tag:"Kekaisaran → republik netral",
+  highlight:{countries:["Austria"]},
+  timeline:[{year:1867,event:"Kekaisaran Austria-Hungaria."},{year:1918,event:"Menjadi republik usai keruntuhan kekaisaran."},{year:1938,event:"Dianeksasi Nazi Jerman (Anschluss)."},{year:1955,event:"Merdeka penuh dan menyatakan netralitas."}]},
+ {id:"hist-47",book:"hist",name:"Belgia",coord:[50.85,4.35],zoom:6,tag:"Merdeka 1830",
+  highlight:{countries:["Belgium"]},
+  timeline:[{year:1830,event:"Merdeka dari Belanda."},{year:"1914 & 1940",event:"Diinvasi Jerman dalam dua Perang Dunia."}]},
+ {id:"hist-48",book:"hist",name:"Swiss",coord:[46.95,7.45],zoom:6,tag:"Konfederasi netral",
+  highlight:{countries:["Switzerland"]},
+  timeline:[{year:1291,event:"Konfederasi Swiss didirikan."},{year:1815,event:"Netralitas permanen diakui secara internasional."}]},
+ {id:"hist-49",book:"hist",name:"Irlandia",coord:[53.35,-6.26],zoom:5,tag:"Merdeka dari Britania",
+  highlight:{countries:["Ireland"]},
+  timeline:[{year:1922,event:"Merdeka sebagai Negara Bebas Irlandia."},{year:1949,event:"Menjadi republik penuh."}]},
+ {id:"hist-50",book:"hist",name:"Norwegia",coord:[59.91,10.75],zoom:4,tag:"Merdeka 1905",
+  highlight:{countries:["Norway"]},
+  timeline:[{year:1814,event:"Konstitusi diadopsi; persatuan dengan Swedia."},{year:1905,event:"Merdeka penuh dari Swedia."}]},
+ {id:"hist-51",book:"hist",name:"Ceko",coord:[50.08,14.44],zoom:5,tag:"Cekoslowakia → Ceko",
+  highlight:{countries:["Czechia","Czech Republic"]},
+  timeline:[{year:1918,event:"Cekoslowakia berdiri usai PD I."},{year:1948,event:"Komunis berkuasa."},{year:1989,event:"Revolusi Beludru mengakhiri komunisme."},{year:1993,event:"Berpisah damai menjadi Ceko dan Slovakia."}]},
+ {id:"hist-52",book:"hist",name:"Hungaria",coord:[47.5,19.04],zoom:5,tag:"Kekaisaran → 1956 → 1989",
+  highlight:{countries:["Hungary"]},
+  timeline:[{year:1867,event:"Bagian dari Austria-Hungaria."},{year:1956,event:"Pemberontakan rakyat ditumpas Uni Soviet."},{year:1989,event:"Transisi damai ke demokrasi."}]},
+ {id:"hist-53",book:"hist",name:"Rumania",coord:[44.43,26.1],zoom:5,tag:"Merdeka → revolusi 1989",
+  highlight:{countries:["Romania"]},
+  timeline:[{year:1878,event:"Merdeka dari Kesultanan Utsmaniyah."},{year:1989,event:"Revolusi menggulingkan dan mengeksekusi Nicolae Ceausescu."}]},
+ {id:"hist-54",book:"hist",name:"Serbia",coord:[44.79,20.45],zoom:5,tag:"Yugoslavia → pecah",
+  highlight:{countries:["Serbia","Republic of Serbia"]},
+  timeline:[{year:1918,event:"Menjadi inti Kerajaan Yugoslavia."},{year:"1991–2001",event:"Yugoslavia pecah lewat serangkaian perang."},{year:2006,event:"Serbia menjadi negara merdeka tersendiri."}]},
+ {id:"hist-55",book:"hist",name:"Finlandia",coord:[60.17,24.94],zoom:4,tag:"Merdeka dari Rusia",
+  highlight:{countries:["Finland"]},
+  timeline:[{year:1917,event:"Merdeka dari Rusia."},{year:1939,event:"Perang Musim Dingin melawan Uni Soviet."}]},
+ {id:"hist-56",book:"hist",name:"Nigeria",coord:[9.06,7.5],zoom:5,tag:"Merdeka → Biafra → demokrasi",
+  highlight:{countries:["Nigeria"]},
+  timeline:[{year:1960,event:"Merdeka dari Britania."},{year:"1967–1970",event:"Perang Biafra."},{year:1999,event:"Kembali ke pemerintahan sipil/demokrasi."}]},
+ {id:"hist-57",book:"hist",name:"Kenya",coord:[-1.29,36.82],zoom:5,tag:"Merdeka 1963",
+  highlight:{countries:["Kenya"]},
+  timeline:[{year:"1952–1960",event:"Pemberontakan Mau Mau melawan Britania."},{year:1963,event:"Merdeka dari Britania."}]},
+ {id:"hist-58",book:"hist",name:"Etiopia",coord:[9.03,38.74],zoom:5,tag:"Kekaisaran → Derg",
+  highlight:{countries:["Ethiopia"]},
+  timeline:[{year:1896,event:"Mengalahkan Italia di Adwa; tetap merdeka."},{year:1974,event:"Kaisar Haile Selassie digulingkan; rezim Derg (komunis)."},{year:1991,event:"Derg tumbang."}]},
+ {id:"hist-59",book:"hist",name:"Ghana",coord:[5.6,-0.19],zoom:5,tag:"Merdeka pertama sub-Sahara",
+  highlight:{countries:["Ghana"]},
+  timeline:[{year:1957,event:"Negara Afrika sub-Sahara pertama yang merdeka (Kwame Nkrumah)."},{year:1966,event:"Nkrumah digulingkan lewat kudeta."}]},
+ {id:"hist-60",book:"hist",name:"DR Kongo",coord:[-4.32,15.31],zoom:4,tag:"Merdeka → Mobutu",
+  highlight:{countries:["Democratic Republic of the Congo","Dem. Rep. Congo"]},
+  timeline:[{year:1960,event:"Merdeka dari Belgia; krisis politik segera pecah."},{year:"1965–1997",event:"Kediktatoran Mobutu Sese Seko (negara bernama Zaire)."},{year:1997,event:"Mobutu tumbang."}]},
+ {id:"hist-61",book:"hist",name:"Aljazair",coord:[36.75,3.06],zoom:5,tag:"Perang kemerdekaan",
+  highlight:{countries:["Algeria"]},
+  timeline:[{year:"1954–1962",event:"Perang kemerdekaan melawan Prancis."},{year:1962,event:"Merdeka."}]},
+ {id:"hist-62",book:"hist",name:"Maroko",coord:[34.02,-6.83],zoom:5,tag:"Merdeka 1956",
+  highlight:{countries:["Morocco"]},
+  timeline:[{year:1956,event:"Merdeka dari Prancis (dan Spanyol)."}]},
+ {id:"hist-63",book:"hist",name:"Sudan",coord:[15.5,32.56],zoom:5,tag:"Merdeka → pemekaran → 2019",
+  highlight:{countries:["Sudan"]},
+  timeline:[{year:1956,event:"Merdeka dari Britania & Mesir."},{year:2011,event:"Sudan Selatan memisahkan diri."},{year:2019,event:"Omar al-Bashir digulingkan setelah 30 tahun."}]},
+ {id:"hist-64",book:"hist",name:"Tanzania",coord:[-6.16,35.75],zoom:5,tag:"Merdeka & persatuan",
+  highlight:{countries:["United Republic of Tanzania","Tanzania"]},
+  timeline:[{year:1961,event:"Tanganyika merdeka dari Britania."},{year:1964,event:"Bersatu dengan Zanzibar menjadi Tanzania."}]},
+ {id:"hist-65",book:"hist",name:"Angola",coord:[-8.84,13.23],zoom:5,tag:"Merdeka → perang saudara",
+  highlight:{countries:["Angola"]},
+  timeline:[{year:1975,event:"Merdeka dari Portugal."},{year:"1975–2002",event:"Perang saudara berkepanjangan."}]},
+ {id:"hist-66",book:"hist",name:"Zimbabwe",coord:[-17.83,31.05],zoom:5,tag:"Merdeka → era Mugabe",
+  highlight:{countries:["Zimbabwe"]},
+  timeline:[{year:1980,event:"Merdeka (dari Rhodesia); Robert Mugabe berkuasa."},{year:2017,event:"Mugabe lengser setelah 37 tahun."}]},
+ {id:"hist-67",book:"hist",name:"Rwanda",coord:[-1.94,30.06],zoom:6,tag:"Merdeka → genosida 1994",
+  highlight:{countries:["Rwanda"]},
+  timeline:[{year:1962,event:"Merdeka dari Belgia."},{year:1994,event:"Genosida menewaskan sekitar 800.000 jiwa."}]},
+ {id:"hist-68",book:"hist",name:"Libya",coord:[32.89,13.19],zoom:5,tag:"Kerajaan → Gaddafi → 2011",
+  highlight:{countries:["Libya"]},
+  timeline:[{year:1951,event:"Merdeka sebagai kerajaan."},{year:1969,event:"Muammar Gaddafi berkuasa lewat kudeta."},{year:2011,event:"Gaddafi tumbang dan tewas (Arab Spring)."}]},
+ {id:"hist-69",book:"hist",name:"Kanada",coord:[45.42,-75.7],zoom:4,tag:"Konfederasi → kedaulatan",
+  highlight:{countries:["Canada"]},
+  timeline:[{year:1867,event:"Konfederasi Kanada (dominion Britania)."},{year:1931,event:"Kedaulatan penuh lewat Statuta Westminster."},{year:1982,event:"Konstitusi 'dipulangkan' dari Britania."}]},
+ {id:"hist-70",book:"hist",name:"Argentina",coord:[-34.6,-58.38],zoom:4,tag:"Merdeka → Perón → militer",
+  highlight:{countries:["Argentina"]},
+  timeline:[{year:1816,event:"Merdeka dari Spanyol."},{year:1946,event:"Juan Perón berkuasa."},{year:"1976–1983",event:"Kediktatoran militer & 'Perang Kotor'."}]},
+ {id:"hist-71",book:"hist",name:"Chile",coord:[-33.45,-70.66],zoom:4,tag:"Merdeka → Pinochet → demokrasi",
+  highlight:{countries:["Chile"]},
+  timeline:[{year:1818,event:"Merdeka dari Spanyol."},{year:1973,event:"Kudeta Pinochet menggulingkan Allende."},{year:1990,event:"Kembali ke demokrasi."}]},
+ {id:"hist-72",book:"hist",name:"Kolombia",coord:[4.61,-74.08],zoom:5,tag:"Merdeka dari Spanyol",
+  highlight:{countries:["Colombia"]},
+  timeline:[{year:1819,event:"Merdeka dari Spanyol (Gran Colombia)."},{year:"1948–1958",event:"Periode kekerasan 'La Violencia'."}]},
+ {id:"hist-73",book:"hist",name:"Peru",coord:[-12.05,-77.04],zoom:5,tag:"Merdeka 1821",
+  highlight:{countries:["Peru"]},
+  timeline:[{year:1533,event:"Penaklukan Spanyol atas Kekaisaran Inka."},{year:1821,event:"Merdeka dari Spanyol."}]},
+ {id:"hist-74",book:"hist",name:"Kuba",coord:[23.11,-82.36],zoom:5,tag:"Merdeka → revolusi 1959",
+  highlight:{countries:["Cuba"]},
+  timeline:[{year:1902,event:"Merdeka (dengan pengaruh kuat AS)."},{year:1959,event:"Revolusi Kuba; Fidel Castro, ideologi komunis."}]},
+ {id:"hist-75",book:"hist",name:"Venezuela",coord:[10.49,-66.9],zoom:5,tag:"Merdeka → era Chávez",
+  highlight:{countries:["Venezuela"]},
+  timeline:[{year:1830,event:"Menjadi negara merdeka tersendiri."},{year:1999,event:"Hugo Chávez berkuasa; 'sosialisme abad ke-21'."}]},
+ {id:"hist-76",book:"hist",name:"Bolivia",coord:[-16.5,-68.15],zoom:5,tag:"Merdeka 1825",
+  highlight:{countries:["Bolivia"]},
+  timeline:[{year:1825,event:"Merdeka dari Spanyol (dinamai dari Simón Bolívar)."}]},
+ {id:"hist-77",book:"hist",name:"Australia",coord:[-35.28,149.13],zoom:4,tag:"Federasi 1901",
+  highlight:{countries:["Australia"]},
+  timeline:[{year:1788,event:"Koloni Britania pertama didirikan."},{year:1901,event:"Federasi koloni menjadi Persemakmuran Australia."}]},
+ {id:"hist-78",book:"hist",name:"Selandia Baru",coord:[-41.29,174.78],zoom:4,tag:"Waitangi → dominion",
+  highlight:{countries:["New Zealand"]},
+  timeline:[{year:1840,event:"Perjanjian Waitangi dengan suku Maori."},{year:1907,event:"Menjadi dominion Britania."}]},
+ {id:"hist-79",book:"hist",name:"Yordania",coord:[31.95,35.93],zoom:6,tag:"Merdeka 1946",
+  highlight:{countries:["Jordan"]},
+  timeline:[{year:1946,event:"Merdeka dari mandat Britania."}]},
+ {id:"hist-80",book:"hist",name:"Lebanon",coord:[33.89,35.5],zoom:6,tag:"Merdeka → perang saudara",
+  highlight:{countries:["Lebanon"]},
+  timeline:[{year:1943,event:"Merdeka dari mandat Prancis."},{year:"1975–1990",event:"Perang saudara."}]},
+ {id:"hist-81",book:"hist",name:"Yaman",coord:[15.37,44.19],zoom:5,tag:"Penyatuan → perang",
+  highlight:{countries:["Yemen"]},
+  timeline:[{year:1990,event:"Penyatuan Yaman Utara dan Selatan."},{year:2014,event:"Perang saudara pecah."}]},
+ {id:"hist-82",book:"hist",name:"Uzbekistan",coord:[41.31,69.24],zoom:4,tag:"Merdeka dari USSR",
+  highlight:{countries:["Uzbekistan"]},
+  timeline:[{year:1991,event:"Merdeka dari Uni Soviet."}]},
+ {id:"trade-1",book:"trade",name:"Minyak Mentah",coord:[24,54],zoom:3,tag:"Teluk Persia → Asia & Eropa",
+  text:"Minyak mentah terutama mengalir dari Teluk Persia (Timur Tengah) ke Asia Timur lewat Selat Hormuz dan Selat Malaka, serta ke Eropa lewat Terusan Suez. Rusia memasok Eropa dan China. Titik-titik sempit (choke point) seperti Hormuz, Malaka, Suez, dan Bab-el-Mandeb adalah simpul paling rawan.",
+  features:[
+   {type:"route",label:"Teluk Persia → Asia Timur",color:"#2b2b2b",coords:[[26.5,56.5],[24,60],[16,68],[8,77],[6,88],[4,96],[2,100.5],[6,106],[14,112],[20,116]]},
+   {type:"route",label:"Teluk Persia → Eropa (Suez)",color:"#2b2b2b",coords:[[26.5,56.5],[20,58],[13,48],[13,43.5],[20,38],[27,34.5],[30,32.5],[33,29],[36,20],[39,10]]},
+   {type:"route",label:"Rusia → Eropa",color:"#2b2b2b",coords:[[56,50],[54,40],[52,30],[52,22],[51,16]]},
+   {type:"route",label:"Rusia → China",color:"#2b2b2b",coords:[[56,95],[52,105],[47,116],[43,121],[41,123]]},
+   {type:"point",label:"Selat Hormuz (choke point)",color:"#b5432e",coords:[26.6,56.3]},
+   {type:"point",label:"Selat Malaka (choke point)",color:"#b5432e",coords:[2.5,101]},
+   {type:"point",label:"Terusan Suez (choke point)",color:"#b5432e",coords:[30,32.5]},
+   {type:"point",label:"Bab-el-Mandeb (choke point)",color:"#b5432e",coords:[12.6,43.4]}
+  ]},
+ {id:"trade-2",book:"trade",name:"Gas Alam / LNG",coord:[25,55],zoom:3,tag:"Pipa & kapal LNG",
+  text:"Gas alam mengalir lewat pipa (terutama Rusia ke Eropa) dan sebagai LNG lewat kapal — Qatar dan Australia ke Asia Timur, serta AS ke Eropa. Berbeda dari minyak, sebagian besar pergerakannya terikat infrastruktur pipa/terminal.",
+  features:[
+   {type:"route",label:"Qatar → Asia Timur (LNG)",color:"#c9772e",coords:[[25.9,51.6],[20,60],[10,72],[5,90],[3,99],[8,108],[20,120],[28,126]]},
+   {type:"pipe",label:"Rusia → Eropa (pipa gas)",color:"#c9772e",coords:[[60,50],[56,42],[53,32],[52,22],[51,16]]},
+   {type:"pipe",label:"Rusia → China (pipa gas)",color:"#c9772e",coords:[[58,95],[53,108],[48,118],[43,122],[41,124]]},
+   {type:"route",label:"AS → Eropa (LNG)",color:"#c9772e",coords:[[29,-91],[33,-65],[40,-38],[44,-16],[46,-6]]},
+   {type:"route",label:"Australia → Asia Timur (LNG)",color:"#c9772e",coords:[[-20,116],[-8,120],[6,124],[20,127],[30,130]]},
+   {type:"point",label:"Qatar — Ras Laffan (LNG)",color:"#b5432e",coords:[25.9,51.6]}
+  ]},
+ {id:"trade-3",book:"trade",name:"Kontainer / Manufaktur",coord:[15,95],zoom:2,tag:"Asia → Eropa & Amerika",
+  text:"Barang manufaktur dalam kontainer mengalir dari pusat produksi Asia Timur ke Eropa (lewat Selat Malaka dan Terusan Suez) dan ke Amerika (menyeberangi Samudra Pasifik). Ini termasuk jalur pelayaran tersibuk di dunia.",
+  features:[
+   {type:"route",label:"Asia → Eropa (Malaka–Suez)",color:"#2f7d8f",coords:[[31,122],[22,114],[6,105],[2,100.5],[8,80],[13,50],[13,43.5],[27,34],[31,32.5],[35,18],[40,6]]},
+   {type:"route",label:"Asia → Amerika (Trans-Pasifik)",color:"#2f7d8f",coords:[[31,122],[36,140],[42,160],[46,178]]},
+   {type:"point",label:"Selat Malaka (choke point)",color:"#b5432e",coords:[2.5,101]},
+   {type:"point",label:"Terusan Suez (choke point)",color:"#b5432e",coords:[30,32.5]}
+  ]},
+ {id:"trade-4",book:"trade",name:"Pangan / Biji-bijian",coord:[30,25],zoom:2,tag:"Laut Hitam & Amerika → dunia",
+  text:"Gandum, jagung, dan kedelai diekspor terutama dari kawasan Laut Hitam (Rusia & Ukraina), Amerika Utara, serta Brasil & Argentina — menuju Timur Tengah, Afrika, dan Asia. Selat Bosphorus dan Terusan Suez adalah simpul penting.",
+  features:[
+   {type:"route",label:"Laut Hitam → Timteng & Afrika",color:"#8a7a2b",coords:[[46,32],[41,29],[35,25],[33,32],[27,35],[20,39],[15,42]]},
+   {type:"route",label:"Amerika Utara → ekspor",color:"#8a7a2b",coords:[[29,-91],[24,-82],[16,-64],[8,-45],[5,-30]]},
+   {type:"route",label:"Amerika Selatan → Asia",color:"#8a7a2b",coords:[[-33,-58],[-35,-30],[-34,18],[-15,55],[5,80],[12,92]]},
+   {type:"point",label:"Selat Bosphorus (choke point)",color:"#b5432e",coords:[41,29]},
+   {type:"point",label:"Terusan Suez (choke point)",color:"#b5432e",coords:[30,32.5]}
+  ]},
+ {id:"trade-5",book:"trade",name:"Batu Bara",coord:[-10,115],zoom:2,tag:"Australia & Indonesia → Asia",
+  text:"Batu bara termal diekspor terutama dari Australia dan Indonesia (serta Rusia) menuju importir besar seperti China, India, dan Jepang.",
+  features:[
+   {type:"route",label:"Australia → China/Jepang",color:"#3a3a3a",coords:[[-33,151],[-20,150],[-2,132],[12,122],[24,120]]},
+   {type:"route",label:"Australia → India",color:"#3a3a3a",coords:[[-32,116],[-20,108],[-5,92],[10,80],[18,73]]},
+   {type:"route",label:"Indonesia → China",color:"#3a3a3a",coords:[[-6,107],[3,110],[12,114],[22,116]]}
+  ]},
+ {id:"trade-6",book:"trade",name:"Bijih Besi",coord:[-15,70],zoom:2,tag:"Australia & Brasil → China",
+  text:"Bijih besi (bahan baku baja) didominasi ekspor Australia dan Brasil, dengan China sebagai pembeli terbesar dunia.",
+  features:[
+   {type:"route",label:"Australia → China",color:"#7a5230",coords:[[-22,118],[-10,115],[5,113],[18,115],[26,119]]},
+   {type:"route",label:"Brasil → China (via Tanjung Harapan)",color:"#7a5230",coords:[[-22,-43],[-34,18],[-15,55],[5,85],[20,113]]}
+  ]},
+ {id:"trade-7",book:"trade",name:"Semikonduktor / Chip",coord:[24,121],zoom:2,tag:"Taiwan & Korea → dunia",
+  text:"Cip semikonduktor tercanggih terkonsentrasi di Taiwan (TSMC) dan Korea Selatan, lalu dikirim ke seluruh dunia — komponen paling kritis bagi elektronik global. Konsentrasi geografis ini menjadikan rantai pasoknya sangat rawan.",
+  features:[
+   {type:"route",label:"Taiwan → Amerika (Trans-Pasifik)",color:"#4a4a8c",coords:[[24,121],[30,145],[40,170],[45,182]]},
+   {type:"route",label:"Taiwan/Korea → Eropa",color:"#4a4a8c",coords:[[24,121],[10,108],[2,100],[10,60],[22,42],[30,32.5],[38,15]]},
+   {type:"route",label:"Korea → China",color:"#4a4a8c",coords:[[37,127],[33,123],[31,119]]},
+   {type:"point",label:"Taiwan (TSMC) — pusat cip canggih",color:"#b5432e",coords:[24,121]},
+   {type:"point",label:"Korea Selatan (Samsung/SK)",color:"#b5432e",coords:[37,127]}
   ]}
 ];
-const state={book:"all",selectedId:null};
+const state={books:new Set(BOOKS.map(b=>b.id)),selectedId:null};
 function bookOf(id){return BOOKS.find(b=>b.id===id);}
 function entryNum(e){return ENTRIES.filter(x=>x.book===e.book).indexOf(e)+1;}
-function visibleEntries(){return state.book==="all"?ENTRIES:ENTRIES.filter(e=>e.book===state.book);}
+function visibleEntries(){return ENTRIES.filter(e=>state.books.has(e.book));}
 
 const esriAttr="Tiles &copy; Esri";
 const physical=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:13,maxNativeZoom:8,attribution:esriAttr});
@@ -392,6 +1005,16 @@ function drawFeature(f){
     const a=f.coords[f.coords.length-2],b=f.coords[f.coords.length-1];
     const icon=L.divIcon({className:"",html:`<div class="ah" style="--c:${f.color};transform:rotate(${bearing(a,b)}deg)"></div>`,iconSize:[16,16],iconAnchor:[8,8]});
     L.marker(b,{icon}).addTo(overlay);
+  } else if(f.type==="route"){
+    lbl(L.polyline(f.coords,{color:f.color,weight:3.5,opacity:.9,dashArray:"9,8"}).addTo(overlay),f.label);
+    const a=f.coords[f.coords.length-2],b=f.coords[f.coords.length-1];
+    const icon=L.divIcon({className:"",html:`<div class="ah" style="--c:${f.color};transform:rotate(${bearing(a,b)}deg)"></div>`,iconSize:[16,16],iconAnchor:[8,8]});
+    L.marker(b,{icon}).addTo(overlay);
+  } else if(f.type==="pipe"){
+    lbl(L.polyline(f.coords,{color:f.color,weight:4,opacity:.95,dashArray:"1,9",lineCap:"round"}).addTo(overlay),f.label);
+    const a=f.coords[f.coords.length-2],b=f.coords[f.coords.length-1];
+    const icon=L.divIcon({className:"",html:`<div class="ah" style="--c:${f.color};transform:rotate(${bearing(a,b)}deg)"></div>`,iconSize:[16,16],iconAnchor:[8,8]});
+    L.marker(b,{icon}).addTo(overlay);
   } else if(f.type==="point"){
     const cm=L.circleMarker(f.coords,{radius:7,color:"#132430",weight:2,fillColor:f.color,fillOpacity:.95}).addTo(overlay);
     cm.bindTooltip(f.label,{className:"flabel",direction:"top",permanent:false});
@@ -401,7 +1024,7 @@ function drawOverlay(e){
   overlay.clearLayers();
   state.selectedId=e.id;
   drawHighlight(e);
-  e.features.forEach(drawFeature);
+  (e.features||[]).forEach(drawFeature);
   buildLegend(e);
 }
 function buildLegend(e){
@@ -409,7 +1032,7 @@ function buildLegend(e){
   document.getElementById("leg-title").textContent="Legenda — "+e.name;
   const seen=new Set(); let html="";
   if(e.highlight) html+=`<div class="leg-row"><span class="swatch" style="background:${b.color};opacity:.5;border:2px solid ${b.color}"></span><span>Batas negara disorot</span></div>`;
-  e.features.forEach(f=>{
+  (e.features||[]).forEach(f=>{
     const key=f.type+"|"+f.label; if(seen.has(key))return; seen.add(key);
     let sw="";
     if(f.type==="area")sw=`<span class="swatch" style="background:${f.color};opacity:.35"></span>`;
@@ -417,6 +1040,8 @@ function buildLegend(e){
     else if(f.type==="border")sw=`<span class="swatch dash" style="border-color:${f.color}"></span>`;
     else if(f.type==="claim")sw=`<span class="swatch dash" style="border-color:${f.color}"></span>`;
     else if(f.type==="arrow")sw=`<span class="swatch line" style="border-color:${f.color}"></span>`;
+    else if(f.type==="route")sw=`<span class="swatch dash" style="border-color:${f.color}"></span>`;
+    else if(f.type==="pipe")sw=`<span class="swatch dot" style="border-color:${f.color}"></span>`;
     else sw=`<span class="swatch pt" style="background:${f.color};border:2px solid #132430"></span>`;
     html+=`<div class="leg-row">${sw}<span>${esc(f.label)}</span></div>`;
   });
@@ -427,6 +1052,19 @@ function buildLegend(e){
 
 // --- markers ---
 const markers={};
+function timelineHTML(tl,color){
+  return '<div class="tl" style="--tlc:'+color+'">'+tl.map(t=>
+    '<div class="tl-item"><span class="tl-year">'+esc(String(t.year))+'</span><span class="tl-txt">'+esc(t.event)+'</span></div>').join("")+'</div>';
+}
+function entryPopupHTML(e){
+  const b=bookOf(e.book);
+  let h='<div class="pop"><div class="pop-eyebrow">'+esc(b.title)+' · '+esc(b.theme)+'</div><h3>'+esc(e.name)+'</h3>';
+  if(e.text) h+='<p>'+esc(e.text)+'</p>';
+  if(e.timeline) h+=timelineHTML(e.timeline,b.color);
+  if(e.tag) h+='<span class="tag">'+esc(e.tag)+'</span>';
+  h+='<div class="psrc">Sumber: '+esc(b.title)+' — '+esc(e.name)+'</div></div>';
+  return h;
+}
 function makeIcon(e,active){
   const b=bookOf(e.book);
   const style=active?"":`background:${b?b.color:"#c08a3e"}`;
@@ -436,7 +1074,7 @@ function makeIcon(e,active){
 ENTRIES.forEach(e=>{
   const b=bookOf(e.book);
   const m=L.marker(e.coord,{icon:makeIcon(e,false)});
-  m.bindPopup(`<div class="pop"><div class="pop-eyebrow">${esc(b.title)} · ${esc(b.theme)}</div><h3>${esc(e.name)}</h3><p>${esc(e.text)}</p><span class="tag">${esc(e.tag)}</span><div class="psrc">Sumber: ${esc(b.title)} — ${esc(e.name)}</div></div>`,{maxWidth:300,keepInView:true,autoPanPaddingTopLeft:[12,110],autoPanPaddingBottomRight:[12,30]});
+  m.bindPopup(entryPopupHTML(e),{maxWidth:300,keepInView:true,autoPanPaddingTopLeft:[12,110],autoPanPaddingBottomRight:[12,30]});
   m.on("popupopen",()=>selectEntry(e.id));
   markers[e.id]=m;
 });
@@ -453,9 +1091,10 @@ function refreshMarkers(){
 const listEl=document.getElementById("list");
 function renderList(){
   listEl.innerHTML="";
-  const books=state.book==="all"?BOOKS:BOOKS.filter(b=>b.id===state.book);
+  const books=BOOKS.filter(b=>state.books.has(b.id));
+  const showHeaders=books.length>1;
   books.forEach(b=>{
-    if(state.book==="all"){
+    if(showHeaders){
       const h=document.createElement("div");h.className="grp";
       h.innerHTML=`<span class="grp-dot" style="background:${b.color}"></span>${esc(b.title)}`;
       listEl.appendChild(h);
@@ -468,13 +1107,19 @@ function renderList(){
     });
   });
 }
-function populateBookSelect(){
-  const sel=document.getElementById("bookSel");
-  BOOKS.forEach(b=>{const o=document.createElement("option");o.value=b.id;o.textContent=b.title;sel.appendChild(o);});
-  sel.addEventListener("change",()=>{
-    state.book=sel.value; state.selectedId=null;
-    overlay.clearLayers(); document.getElementById("legend").style.display="none";
-    renderList(); refreshMarkers();
+function buildBookChooser(){
+  const box=document.getElementById("bookSel");
+  box.innerHTML="";
+  BOOKS.forEach(b=>{
+    const lab=document.createElement("label");lab.className="bk-item";
+    lab.innerHTML=`<input type="checkbox" checked><span class="bk-dot" style="background:${b.color}"></span><span class="bk-name">${esc(b.title)}</span>`;
+    box.appendChild(lab);
+    lab.querySelector("input").addEventListener("change",e=>{
+      if(e.target.checked)state.books.add(b.id); else state.books.delete(b.id);
+      state.selectedId=null;
+      overlay.clearLayers(); document.getElementById("legend").style.display="none";
+      renderList(); refreshMarkers();
+    });
   });
 }
 
@@ -495,7 +1140,7 @@ function goToEntry(id){
   if(window.innerWidth<=760)setCollapsed(true);
 }
 
-populateBookSelect();
+buildBookChooser();
 renderList();
 refreshMarkers();
 // --- left panel collapse (all screen sizes) ---
